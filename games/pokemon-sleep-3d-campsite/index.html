@@ -36,6 +36,19 @@
       background-color: #7dd3fc;
     }
 
+    .safe-top {
+      padding-top: max(0.625rem, env(safe-area-inset-top));
+    }
+
+    .safe-bottom {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    .safe-x {
+      padding-left: max(0.625rem, env(safe-area-inset-left));
+      padding-right: max(0.625rem, env(safe-area-inset-right));
+    }
+
     .font-display {
       font-family: var(--font-display);
     }
@@ -118,57 +131,76 @@
   <!-- ========================================================================
        TOP MOBILE HUD: PICTURE-FIRST SLEEP RANK, 5-POKÉMON PARTY & DAY/NIGHT
        ======================================================================== -->
-  <header class="pointer-events-none fixed top-0 inset-x-0 z-20 px-2.5 pt-2.5 sm:px-5 sm:pt-4 flex items-stretch justify-between gap-2">
-    <!-- Snorlax Sleep Rank & Big Star Progress Card (64px+ Touch Height) -->
-    <div class="pointer-events-auto min-h-[64px] flex items-center gap-2.5 bg-white/95 backdrop-blur-md border-3 border-amber-300 shadow-lg rounded-3xl px-3 py-2 flex-1 max-w-[300px]">
-      <!-- Rank Crest Badge with Star -->
-      <div id="rank-badge" class="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-inner shrink-0">
-        <svg class="w-4 h-4 text-yellow-200 drop-shadow-xs" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <span id="rank-tier-short" class="font-display text-sm font-bold leading-tight">B-1</span>
+  <header class="pointer-events-none fixed top-0 inset-x-0 z-20 safe-top safe-x sm:px-5 sm:pt-4 flex flex-col sm:flex-row sm:items-stretch sm:justify-between gap-2 max-w-full">
+    <!-- Top Row (Mobile): Sleep Rank Card + Day/Night & Sound Buttons (Guaranteed Zero Clipping on Pixel 10 Pro) -->
+    <div class="flex items-stretch justify-between gap-2 w-full sm:flex-1 sm:max-w-[330px] min-w-0">
+      <!-- Snorlax Sleep Rank & Big Star Progress Card -->
+      <div class="pointer-events-auto min-h-[60px] sm:min-h-[64px] flex items-center gap-2 bg-white/95 backdrop-blur-md border-3 border-amber-300 shadow-lg rounded-3xl px-2.5 sm:px-3 py-1.5 flex-1 min-w-0">
+        <!-- Rank Crest Badge with Star -->
+        <div id="rank-badge" class="flex flex-col items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-inner shrink-0">
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-200 drop-shadow-xs" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <span id="rank-tier-short" class="font-display text-xs sm:text-sm font-bold leading-tight">B-1</span>
+        </div>
+
+        <!-- Visual Star Progress Bar -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-1">
+            <span id="rank-label" class="font-display font-bold text-slate-800 text-xs sm:text-base truncate">Basic 1</span>
+            <span class="text-xs sm:text-sm font-black text-amber-600 flex items-center gap-0.5 shrink-0">
+              <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span id="strength-value">0</span>
+            </span>
+          </div>
+          <div class="w-full h-3 sm:h-3.5 bg-slate-200 rounded-full overflow-hidden mt-1 p-0.5 border border-slate-300/70">
+            <div id="rank-progress-bar" class="h-full rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 transition-all duration-700" style="width: 0%;"></div>
+          </div>
+          <div class="flex justify-between text-[10px] font-extrabold text-slate-500 mt-0.5">
+            <span>Stars</span>
+            <span id="next-rank-label">1,200</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Visual Star Progress Bar -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between gap-1">
-          <span id="rank-label" class="font-display font-bold text-slate-800 text-sm sm:text-base truncate">Basic 1</span>
-          <span class="text-xs sm:text-sm font-black text-amber-600 flex items-center gap-0.5 shrink-0">
-            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span id="strength-value">0</span>
-          </span>
-        </div>
-        <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden mt-1 p-0.5 border border-slate-300/70">
-          <div id="rank-progress-bar" class="h-full rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 transition-all duration-700" style="width: 0%;"></div>
-        </div>
-        <div class="flex justify-between text-[10px] font-extrabold text-slate-500 mt-0.5">
-          <span>Stars</span>
-          <span id="next-rank-label">1,200</span>
-        </div>
+      <!-- Mobile-Visible Day/Night & Sound Buttons (Visible on <640px right beside Rank Card) -->
+      <div class="pointer-events-auto flex sm:hidden items-center gap-1.5 shrink-0">
+        <button id="btn-theme-toggle-mobile" type="button" aria-label="Toggle Day and Night"
+          class="w-[60px] h-[60px] flex flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
+          <span id="theme-icon-wrap-mobile" class="w-6 h-6 flex items-center justify-center"></span>
+          <span id="theme-text-mobile" class="text-[11px] leading-none mt-0.5">Day</span>
+        </button>
+
+        <button id="btn-sound-toggle-mobile" type="button" aria-label="Toggle Sound"
+          class="w-[60px] h-[60px] flex flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
+          <span id="sound-icon-wrap-mobile" class="w-6 h-6 flex items-center justify-center"></span>
+          <span class="text-[11px] leading-none mt-0.5">Sound</span>
+        </button>
       </div>
     </div>
 
-    <!-- Top-Right Large 64px+ Toddler Touch Controls -->
-    <div class="pointer-events-auto flex items-center gap-2 shrink-0">
+    <!-- Second Row on Mobile / Right Group on Tablet & Desktop: 5-Pokémon Party + Controls -->
+    <div class="pointer-events-auto flex items-center justify-between sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
       <!-- Large Party Button Showing All 5 Active Pokémon Mini-Icons -->
       <button id="btn-open-party" type="button" aria-label="Change 5 Pokémon Party"
-        class="min-h-[64px] flex flex-col items-center justify-center bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 active:scale-95 text-white px-3 py-1.5 rounded-3xl shadow-lg border-b-4 border-indigo-800 transition cursor-pointer">
-        <div id="hud-party-mini-icons" class="flex items-center -space-x-1.5">
+        class="w-full sm:w-auto min-h-[52px] sm:min-h-[64px] flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-2 sm:gap-0 bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 active:scale-95 text-white px-3.5 sm:px-3 py-1.5 rounded-2xl sm:rounded-3xl shadow-lg border-b-4 border-indigo-800 transition cursor-pointer">
+        <div id="hud-party-mini-icons" class="flex items-center -space-x-1">
           <!-- Populated dynamically with the 5 active Pokémon mini-SVGs -->
         </div>
-        <span class="font-display font-bold text-[11px] sm:text-xs tracking-wide mt-0.5">
-          Party (<span id="party-count-label">5</span>/5)
+        <span class="font-display font-bold text-xs tracking-wide sm:mt-0.5 flex items-center gap-1">
+          <span>Party (<span id="party-count-label">5</span>/5)</span>
+          <span class="sm:hidden text-[10px] bg-white/20 px-2 py-0.5 rounded-full">Swap</span>
         </span>
       </button>
 
-      <!-- Large 64x64 Sun / Moon Toggle -->
+      <!-- Tablet/Desktop 64x64 Sun / Moon Toggle -->
       <button id="btn-theme-toggle" type="button" aria-label="Toggle Day and Night"
-        class="w-16 h-16 flex flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
+        class="hidden sm:flex w-16 h-16 flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
         <span id="theme-icon-wrap" class="w-7 h-7 flex items-center justify-center"></span>
         <span id="theme-text" class="text-[11px] leading-none mt-0.5">Day</span>
       </button>
 
-      <!-- Large 64x64 Sound Toggle -->
+      <!-- Tablet/Desktop 64x64 Sound Toggle -->
       <button id="btn-sound-toggle" type="button" aria-label="Toggle Sound"
-        class="w-16 h-16 flex flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
+        class="hidden sm:flex w-16 h-16 flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
         <span id="sound-icon-wrap" class="w-7 h-7 flex items-center justify-center"></span>
         <span id="sound-text" class="text-[11px] leading-none mt-0.5">Sound</span>
       </button>
@@ -178,22 +210,22 @@
   <!-- ========================================================================
        FLOATING ONBOARDING TIP & TOAST BANNERS
        ======================================================================== -->
-  <div id="onboarding-pill" class="pointer-events-none fixed top-22 left-1/2 -translate-x-1/2 z-20 transition-all duration-500 mt-1">
-    <div class="bg-slate-900/85 backdrop-blur-md text-white font-display font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full shadow-lg border border-white/20 whitespace-nowrap flex items-center gap-2">
-      <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping"></span>
-      <span>Tap Pokémon for treats • Tap Snorlax to cook!</span>
+  <div id="onboarding-pill" class="pointer-events-none fixed top-34 sm:top-22 left-1/2 -translate-x-1/2 z-20 transition-all duration-500 mt-1 max-w-[94vw]">
+    <div class="bg-slate-900/85 backdrop-blur-md text-white font-display font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-full shadow-lg border border-white/20 truncate flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping shrink-0"></span>
+      <span class="truncate">Tap Pokémon for treats • Tap Snorlax to cook!</span>
     </div>
   </div>
 
-  <div id="toast-banner" class="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-30 opacity-0 translate-y-2 transition-all duration-300">
-    <div id="toast-content" class="bg-slate-900/92 backdrop-blur-md text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-full shadow-xl border border-white/20 whitespace-nowrap flex items-center gap-2">
+  <div id="toast-banner" class="pointer-events-none fixed top-32 sm:top-20 left-1/2 -translate-x-1/2 z-30 opacity-0 translate-y-2 transition-all duration-300 max-w-[94vw]">
+    <div id="toast-content" class="bg-slate-900/92 backdrop-blur-md text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-full shadow-xl border border-white/20 truncate flex items-center gap-2">
     </div>
   </div>
 
   <!-- ========================================================================
        CELEBRATION CUTSCENE FLOATING BANNER (SHOWN DURING MEAL & DANCE)
        ======================================================================== -->
-  <div id="celebration-banner" class="hidden pointer-events-none fixed top-20 inset-x-3 z-30 flex justify-center">
+  <div id="celebration-banner" class="hidden pointer-events-none fixed top-32 sm:top-20 inset-x-3 z-30 flex justify-center">
     <div class="animate-modal-pop bg-white/95 backdrop-blur-md border-4 border-amber-300 rounded-3xl px-5 py-3 shadow-2xl text-center max-w-sm w-full">
       <div id="celeb-crit-badge" class="hidden inline-block bg-gradient-to-r from-yellow-400 via-amber-400 to-rose-500 text-slate-950 font-display font-extrabold text-xs uppercase tracking-wider px-3 py-0.5 rounded-full shadow mb-1">
         EXTRA TASTY! 2x STRENGTH!
@@ -214,16 +246,16 @@
   <!-- ========================================================================
        BOTTOM TODDLER DOCK: BIG INGREDIENT CARDS + GIANT 'FEED SNORLAX!' BUTTON
        ======================================================================== -->
-  <footer id="bottom-dock" class="pointer-events-none fixed bottom-0 inset-x-0 z-20 px-2 pb-2 sm:px-4 sm:pb-3.5 transition-transform duration-300">
+  <footer id="bottom-dock" class="pointer-events-none fixed bottom-0 inset-x-0 z-20 safe-x safe-bottom sm:px-4 sm:pb-3.5 transition-transform duration-300">
     <div class="pointer-events-auto max-w-4xl mx-auto bg-white/95 backdrop-blur-md border-3 border-amber-300 shadow-2xl rounded-3xl p-2 sm:p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-      <!-- Large Visual Ingredient Dock (9 Big Custom SVG Cards) -->
+      <!-- Large Visual Ingredient Dock (9 Big Custom SVG Cards, Active Party Sorted First on Mobile) -->
       <div id="ingredient-bag-strip" class="flex sm:grid sm:grid-cols-9 gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5">
         <!-- Populated dynamically via JS with large custom SVG icons -->
       </div>
 
-      <!-- GIANT Pulsing Green 'FEED SNORLAX!' Button (72px+ Touch Target) -->
+      <!-- GIANT Pulsing Green 'FEED SNORLAX!' Button (64px-72px Touch Target) -->
       <button id="btn-open-cook" type="button"
-        class="relative min-h-[72px] sm:min-w-[205px] flex items-center justify-center gap-2.5 bg-gradient-to-b from-emerald-400 via-green-500 to-green-600 hover:from-emerald-300 hover:to-green-500 active:scale-95 text-white font-display font-bold text-base sm:text-lg px-4 py-2.5 rounded-2xl shadow-xl border-b-4 border-green-800 transition cursor-pointer shrink-0">
+        class="relative min-h-[64px] sm:min-h-[72px] sm:min-w-[205px] flex items-center justify-center gap-2.5 bg-gradient-to-b from-emerald-400 via-green-500 to-green-600 hover:from-emerald-300 hover:to-green-500 active:scale-95 text-white font-display font-bold text-base sm:text-lg px-4 py-2 rounded-2xl shadow-xl border-b-4 border-green-800 transition cursor-pointer shrink-0">
         <span id="feed-btn-illustration" class="w-11 h-11 shrink-0 drop-shadow"></span>
         <div class="text-left leading-tight">
           <div class="text-base sm:text-lg font-extrabold tracking-wide drop-shadow-xs">FEED SNORLAX!</div>
@@ -1656,28 +1688,28 @@
         };
 
         // 1. Hero Detail: Classic Pokéball resting next to a smooth rock right beside Snorlax's blanket!
-        const heroRock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42, 1), mossyRockMat);
-        heroRock.position.set(4.02, 0.24, -2.18);
-        heroRock.scale.set(1.25, 0.72, 1.05);
+        const heroRock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.40, 1), mossyRockMat);
+        heroRock.position.set(3.28, 0.23, -2.55);
+        heroRock.scale.set(1.2, 0.72, 1.05);
         heroRock.castShadow = true;
         heroRock.receiveShadow = true;
         envGroup.add(heroRock);
 
         const heroPokeball = createPokeballProp(0xef4444);
-        heroPokeball.position.set(3.24, 0.26, -1.80);
+        heroPokeball.position.set(2.65, 0.25, -2.18);
         heroPokeball.rotation.set(0.22, -0.45, -0.18);
         envGroup.add(heroPokeball);
 
         // 2. Second Pokéball (Great Ball) nestled next to a boulder on the left clearing edge
-        const leftBoulder = new THREE.Mesh(new THREE.DodecahedronGeometry(0.62, 1), rockMat);
-        leftBoulder.position.set(-7.75, 0.36, -3.25);
-        leftBoulder.scale.set(1.3, 0.8, 1.1);
+        const leftBoulder = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), rockMat);
+        leftBoulder.position.set(-4.35, 0.32, -4.45);
+        leftBoulder.scale.set(1.25, 0.8, 1.1);
         leftBoulder.castShadow = true;
         leftBoulder.receiveShadow = true;
         envGroup.add(leftBoulder);
 
         const leftPokeball = createPokeballProp(0x2563eb);
-        leftPokeball.position.set(-6.55, 0.26, -2.72);
+        leftPokeball.position.set(-3.45, 0.25, -3.95);
         leftPokeball.rotation.set(0.18, 0.65, 0.22);
         envGroup.add(leftPokeball);
 
@@ -3266,20 +3298,20 @@
       const activeEntities = [];
       const cutsceneProps = [];
 
-      const SEMICIRCLE_SPOTS = [
-        new THREE.Vector3(-3.3, 0, 1.3),
-        new THREE.Vector3(-1.85, 0, 2.85),
-        new THREE.Vector3(0.0, 0, 3.45),
-        new THREE.Vector3(1.85, 0, 2.85),
-        new THREE.Vector3(3.3, 0, 1.3)
+      const BASE_SEMICIRCLE_SPOTS = [
+        new THREE.Vector3(-3.35, 0, 1.35),
+        new THREE.Vector3(-1.65, 0, 3.25),
+        new THREE.Vector3(0.00, 0, 3.65),
+        new THREE.Vector3(1.65, 0, 3.25),
+        new THREE.Vector3(3.35, 0, 1.35)
       ];
 
-      // Static circular obstacles with generous safety clearance radii
+      // Static circular obstacles with balanced clearance radii
       const STATIC_OBSTACLES = [
-        { x: 0.0, z: -0.45, r: 3.95 },   // Snorlax & Picnic Blanket
-        { x: -2.55, z: 2.35, r: 1.85 },  // Campfire & Cooking Pot
-        { x: 3.65, z: -2.00, r: 1.05 },  // Mossy Rock & Pokéball
-        { x: -7.15, z: -3.00, r: 1.25 }, // Left Boulder & Great Ball
+        { x: 0.0, z: -0.45, r: 3.30 },   // Snorlax & Picnic Blanket
+        { x: -2.55, z: 2.35, r: 1.55 },  // Campfire & Cooking Pot
+        { x: 2.98, z: -2.36, r: 0.92 },  // Mossy Rock & Pokéball
+        { x: -3.90, z: -4.20, r: 1.05 }, // Left Boulder & Great Ball
         { x: 7.40, z: -3.90, r: 1.05 }   // Wooden Signpost & Lantern
       ];
 
@@ -3288,7 +3320,39 @@
         -1.12, 1.12, -1.50, 1.50, -1.95, 1.95, -2.45, 2.45, 3.14
       ];
 
-      // Checks if a straight-line corridor from startPos to endPos is clear of obstacles & peers
+      /**
+       * Computes the exact horizontal half-width visible on screen at world depth `z`
+       * for the current fixed isometric camera, guaranteeing Pokémon never walk off
+       * the left or right edge of narrow portrait viewports (such as Pixel 10 Pro).
+       */
+      function getMaxSafeXAtZ(z, edgePadding = 0.95) {
+        const sinPhi = Math.sin(FIXED_CAM.phi);
+        const cosPhi = Math.cos(FIXED_CAM.phi);
+        const camY = FIXED_CAM.target.y + FIXED_CAM.currentRadius * cosPhi;
+        const camZ = FIXED_CAM.target.z + FIXED_CAM.currentRadius * sinPhi;
+
+        const depth = (camY - 0.7) * cosPhi + (camZ - z) * sinPhi;
+        const halfFovRad = THREE.MathUtils.degToRad(camera.fov * 0.5);
+        const visibleHalfWidth = Math.max(3.6, depth * Math.tan(halfFovRad) * camera.aspect);
+
+        // Cap at 7.45 on wide landscape screens; tightly bound to visible frustum on portrait mobile
+        return Math.min(7.45, Math.max(3.25, visibleHalfWidth - edgePadding));
+      }
+
+      function isInsidePlayableBounds(x, z, extraPadding = 0) {
+        if (z < -6.35 + extraPadding || z > 5.45 - extraPadding) return false;
+        const maxX = getMaxSafeXAtZ(z, 0.95 + extraPadding);
+        return Math.abs(x) <= maxX;
+      }
+
+      function clampToPlayableBounds(vec) {
+        vec.z = THREE.MathUtils.clamp(vec.z, -6.35, 5.45);
+        const maxX = getMaxSafeXAtZ(vec.z, 0.95);
+        vec.x = THREE.MathUtils.clamp(vec.x, -maxX, maxX);
+        return vec;
+      }
+
+      // Checks if a straight-line corridor from startPos to endPos is clear of screen edges, obstacles & peers
       function isCorridorClear(startPos, endPos, ignoreIndex = -1) {
         const steps = 10;
         for (let s = 1; s <= steps; s++) {
@@ -3296,11 +3360,11 @@
           const px = startPos.x + (endPos.x - startPos.x) * t;
           const pz = startPos.z + (endPos.z - startPos.z) * t;
 
-          if (Math.hypot(px, pz + 0.25) > 7.65) return false;
+          if (!isInsidePlayableBounds(px, pz, 0.1)) return false;
 
           for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
             const obs = STATIC_OBSTACLES[k];
-            if (Math.hypot(px - obs.x, pz - obs.z) < obs.r + 0.25) return false;
+            if (Math.hypot(px - obs.x, pz - obs.z) < obs.r + 0.22) return false;
           }
 
           for (let j = 0; j < activeEntities.length; j++) {
@@ -3308,7 +3372,7 @@
             const other = activeEntities[j];
             const futureOtherX = other.pos.x + (other.vel ? other.vel.x * t * 1.4 : 0);
             const futureOtherZ = other.pos.z + (other.vel ? other.vel.z * t * 1.4 : 0);
-            if (Math.hypot(px - futureOtherX, pz - futureOtherZ) < 1.55) return false;
+            if (Math.hypot(px - futureOtherX, pz - futureOtherZ) < 1.5) return false;
           }
         }
         return true;
@@ -3318,18 +3382,17 @@
         let bestCandidate = null;
         let bestScore = -Infinity;
 
-        for (let attempt = 0; attempt < 48; attempt++) {
-          const angle = Math.random() * Math.PI * 2;
-          const radius = 4.2 + Math.random() * 3.35;
-          const tx = Math.cos(angle) * radius;
-          const tz = Math.sin(angle) * radius - 0.30;
+        for (let attempt = 0; attempt < 64; attempt++) {
+          const tz = -6.15 + Math.random() * 11.35;
+          const maxX = getMaxSafeXAtZ(tz, 1.05);
+          const tx = (Math.random() * 2 - 1) * maxX;
 
-          if (Math.hypot(tx, tz + 0.25) > 7.65) continue;
+          if (!isInsidePlayableBounds(tx, tz, 0.15)) continue;
 
           let hitsObstacle = false;
           for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
             const obs = STATIC_OBSTACLES[k];
-            if (Math.hypot(tx - obs.x, tz - obs.z) < obs.r + 0.35) {
+            if (Math.hypot(tx - obs.x, tz - obs.z) < obs.r + 0.30) {
               hitsObstacle = true;
               break;
             }
@@ -3344,12 +3407,12 @@
             const dTar = Math.hypot(tx - other.target.x, tz - other.target.z);
             minPeerDist = Math.min(minPeerDist, dPos, dTar);
           }
-          if (minPeerDist < 1.85) continue;
+          if (minPeerDist < 1.75) continue;
 
           let avoidBonus = 0;
           if (avoidPos) {
             const dAvoid = Math.hypot(tx - avoidPos.x, tz - avoidPos.z);
-            if (dAvoid < 2.2) continue;
+            if (dAvoid < 2.0) continue;
             avoidBonus = Math.min(dAvoid, 5.0) * 0.35;
           }
 
@@ -3365,8 +3428,16 @@
 
         if (bestCandidate) return bestCandidate;
 
-        const fallbackAngle = ((index + Math.random() * 0.5) / 5) * Math.PI * 2;
-        return new THREE.Vector3(Math.cos(fallbackAngle) * 5.6, 0, Math.sin(fallbackAngle) * 5.6);
+        // Safe viewport-aware fallback waypoints around Snorlax
+        const safeFallbacks = [
+          new THREE.Vector3(-2.6, 0, -4.9),
+          new THREE.Vector3(2.6, 0, -4.9),
+          new THREE.Vector3(0.0, 0, -5.3),
+          new THREE.Vector3(0.2, 0, 4.3),
+          new THREE.Vector3(2.7, 0, 3.6)
+        ];
+        const fb = safeFallbacks[index % safeFallbacks.length].clone();
+        return clampToPlayableBounds(fb);
       }
 
       function syncActiveParty3D() {
@@ -3379,6 +3450,9 @@
           model.root.position.copy(startPos);
           model.root.rotation.y = Math.atan2(-startPos.x, -startPos.z);
           scene.add(model.root);
+
+          const baseSpot = BASE_SEMICIRCLE_SPOTS[idx % BASE_SEMICIRCLE_SPOTS.length].clone();
+          clampToPlayableBounds(baseSpot);
 
           activeEntities.push({
             id: pokeId,
@@ -3395,7 +3469,9 @@
             retargetCooldown: 0,
             stuckCheckTimer: 0,
             lastCheckPos: startPos.clone(),
-            cutsceneSpot: SEMICIRCLE_SPOTS[idx % SEMICIRCLE_SPOTS.length].clone(),
+            stationaryTimer: 0,
+            stationaryAnchorPos: startPos.clone(),
+            cutsceneSpot: baseSpot,
             dancePhaseOffset: idx * 0.45
           });
         });
@@ -3457,7 +3533,10 @@
         }
 
         activeEntities.forEach((ent, idx) => {
-          ent.cutsceneSpot.copy(SEMICIRCLE_SPOTS[idx % SEMICIRCLE_SPOTS.length]);
+          const spot = BASE_SEMICIRCLE_SPOTS[idx % BASE_SEMICIRCLE_SPOTS.length].clone();
+          const maxX = getMaxSafeXAtZ(spot.z, 1.0);
+          spot.x = THREE.MathUtils.clamp(spot.x, -maxX, maxX);
+          ent.cutsceneSpot.copy(spot);
           setCharacterFace(ent.model.faceRig, false);
         });
       }
@@ -3618,8 +3697,10 @@
           ent.happyTimer = 0;
           ent.retargetCooldown = 0;
           ent.stuckCheckTimer = 0;
+          ent.stationaryTimer = 0;
           ent.vel.set(0, 0, 0);
           ent.lastCheckPos.copy(ent.pos);
+          ent.stationaryAnchorPos.copy(ent.pos);
           ent.model.bodyPivot.position.y = 0;
           ent.model.bodyPivot.rotation.set(0, 0, 0);
           ent.model.bodyPivot.scale.set(1, 1, 1);
@@ -3718,6 +3799,19 @@
             const ox = ent.pos.x - obs.x;
             const oz = ent.pos.z - obs.z;
             const obsSafeR = obs.r + 0.22;
+            const dObsNow = Math.hypot(ox, oz);
+
+            // If currently inside an obstacle's clearance zone (e.g. near Snorlax's feet),
+            // strongly reward headings that move directly outward away from the obstacle.
+            if (dObsNow < obsSafeR) {
+              const dotOut = ox * candVx + oz * candVz;
+              if (dotOut > 0) {
+                penalty -= 38.0 * (dotOut / (Math.max(dObsNow, 0.01) * speed));
+              } else {
+                penalty += 95.0;
+              }
+              continue;
+            }
 
             const tObs = THREE.MathUtils.clamp(-(ox * candVx + oz * candVz) / (speed * speed), 0, 1.55);
             const dObs = Math.hypot(ox + candVx * tObs, oz + candVz * tObs);
@@ -3727,12 +3821,15 @@
             }
           }
 
-          // 3. Predict Perimeter Meadow Fence Clearance
-          const predEndX = ent.pos.x + candVx * 1.25;
-          const predEndZ = ent.pos.z + candVz * 1.25 + 0.25;
-          const predR = Math.hypot(predEndX, predEndZ);
-          if (predR > 7.65) {
-            penalty += 50.0 + (predR - 7.65) * 60.0;
+          // 3. Predict Perimeter & Left/Right Viewport Frustum Clearance
+          const predEndX = ent.pos.x + candVx * 1.15;
+          const predEndZ = ent.pos.z + candVz * 1.15;
+          const predMaxX = getMaxSafeXAtZ(predEndZ, 0.95);
+          if (Math.abs(predEndX) > predMaxX) {
+            penalty += 65.0 + (Math.abs(predEndX) - predMaxX) * 90.0;
+          }
+          if (predEndZ < -6.35 || predEndZ > 5.45) {
+            penalty += 65.0;
           }
 
           // 4. Score Goal Progress + Smooth Velocity Momentum + Right-Hand Passing Symmetry Breaker
@@ -3757,10 +3854,135 @@
         return { vx: bestVelX, vz: bestVelZ, shouldYield: false };
       }
 
+      /**
+       * Force-moves a Pokémon a set distance away from Snorlax's feet and any nearby
+       * objects/peers if it remains in one place for more than 3 seconds.
+       */
+      function forceDisplacePokemonAwayFromObjects(ent, index) {
+        let repelX = 0;
+        let repelZ = 0;
+
+        // 1. Repel strongly away from all static obstacles (especially Snorlax & his feet)
+        for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
+          const obs = STATIC_OBSTACLES[k];
+          const dx = ent.pos.x - obs.x;
+          const dz = ent.pos.z - obs.z;
+          const dist = Math.hypot(dx, dz) || 0.01;
+          const clearance = obs.r + 1.4;
+          if (dist < clearance) {
+            const weight = ((clearance - dist) / clearance + 0.5) * (k === 0 ? 2.4 : 1.5);
+            repelX += (dx / dist) * weight;
+            repelZ += (dz / dist) * weight;
+          }
+        }
+
+        // 2. Repel away from any nearby peer Pokémon
+        for (let j = 0; j < activeEntities.length; j++) {
+          if (j === index) continue;
+          const other = activeEntities[j];
+          const dx = ent.pos.x - other.pos.x;
+          const dz = ent.pos.z - other.pos.z;
+          const dist = Math.hypot(dx, dz) || 0.01;
+          if (dist < 2.8) {
+            const weight = ((2.8 - dist) / 2.8) * 1.6;
+            repelX += (dx / dist) * weight;
+            repelZ += (dz / dist) * weight;
+          }
+        }
+
+        // Fallback outward vector away from Snorlax if forces balanced out
+        if (Math.hypot(repelX, repelZ) < 0.05) {
+          const outAngle = Math.atan2(ent.pos.x, ent.pos.z + 0.45) + (index % 2 === 0 ? 0.55 : -0.55);
+          repelX = Math.sin(outAngle);
+          repelZ = Math.cos(outAngle);
+        }
+
+        const baseAngle = Math.atan2(repelX, repelZ);
+        const angleOffsets = [0, 0.35, -0.35, 0.72, -0.72, 1.15, -1.15, 1.65, -1.65, 2.35, -2.35];
+        const stepDistances = [2.35, 2.75, 1.95, 3.15];
+
+        let chosenPos = null;
+        for (let dIdx = 0; dIdx < stepDistances.length && !chosenPos; dIdx++) {
+          const pushDist = stepDistances[dIdx];
+          for (let aIdx = 0; aIdx < angleOffsets.length; aIdx++) {
+            const ang = baseAngle + angleOffsets[aIdx];
+            const nx = ent.pos.x + Math.sin(ang) * pushDist;
+            const nz = ent.pos.z + Math.cos(ang) * pushDist;
+
+            // Keep strictly inside the visible viewport bounds
+            if (!isInsidePlayableBounds(nx, nz, 0.15)) continue;
+
+            // Ensure clear of all static obstacles
+            let blockedByObs = false;
+            for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
+              const obs = STATIC_OBSTACLES[k];
+              if (Math.hypot(nx - obs.x, nz - obs.z) < obs.r + 0.32) {
+                blockedByObs = true;
+                break;
+              }
+            }
+            if (blockedByObs) continue;
+
+            // Ensure clear of all peer Pokémon
+            let blockedByPeer = false;
+            for (let j = 0; j < activeEntities.length; j++) {
+              if (j === index) continue;
+              const other = activeEntities[j];
+              if (Math.hypot(nx - other.pos.x, nz - other.pos.z) < 1.65) {
+                blockedByPeer = true;
+                break;
+              }
+            }
+            if (blockedByPeer) continue;
+
+            chosenPos = new THREE.Vector3(nx, 0, nz);
+            break;
+          }
+        }
+
+        if (!chosenPos) {
+          chosenPos = pickWanderTarget(index, ent.pos, ent.pos);
+        }
+
+        const moveDirX = chosenPos.x - ent.pos.x;
+        const moveDirZ = chosenPos.z - ent.pos.z;
+        const moveLen = Math.hypot(moveDirX, moveDirZ) || 1;
+
+        ent.pos.copy(chosenPos);
+        ent.model.root.position.copy(ent.pos);
+        ent.model.root.rotation.y = Math.atan2(moveDirX, moveDirZ);
+
+        // Reset stationary & pause state and assign a fresh unobstructed destination
+        ent.stationaryTimer = 0;
+        ent.stationaryAnchorPos.copy(ent.pos);
+        ent.lastCheckPos.copy(ent.pos);
+        ent.stuckCheckTimer = 0;
+        ent.pauseTimer = 0;
+        ent.retargetCooldown = 0.6;
+        ent.bounceTimer = 0.42;
+        ent.target = pickWanderTarget(index, ent.pos, ent.pos);
+        ent.vel.set((moveDirX / moveLen) * 1.65, 0, (moveDirZ / moveLen) * 1.65);
+
+        spawn3DSparkleBurst(ent.pos.clone().setY(0.75), 6);
+      }
+
       function updateWanderingPokemon(dt, elapsed) {
         for (let i = 0; i < activeEntities.length; i++) {
           const ent = activeEntities[i];
           if (ent.retargetCooldown > 0) ent.retargetCooldown = Math.max(0, ent.retargetCooldown - dt);
+
+          // 3-Second Stationary Watchdog: if the Pokémon stays in the same spot for > 3.0s,
+          // force-move it a clear distance away from Snorlax's feet and any nearby objects.
+          if (ent.pos.distanceTo(ent.stationaryAnchorPos) > 0.65) {
+            ent.stationaryTimer = 0;
+            ent.stationaryAnchorPos.copy(ent.pos);
+          } else {
+            ent.stationaryTimer += dt;
+            if (ent.stationaryTimer >= 3.0) {
+              forceDisplacePokemonAwayFromObjects(ent, i);
+              continue;
+            }
+          }
 
           // Zapdos gentle wing flapping even while hovering/walking
           if (ent.model.wingLeftPivot && ent.model.wingRightPivot) {
@@ -3855,12 +4077,8 @@
             ent.stuckCheckTimer = 0;
           }
 
-          // Safety boundary clamp (keeps units strictly inside the meadow ring)
-          const rNow = Math.hypot(ent.pos.x, ent.pos.z + 0.25);
-          if (rNow > 7.9) {
-            ent.pos.x *= 7.9 / rNow;
-            ent.pos.z = (ent.pos.z + 0.25) * (7.9 / rNow) - 0.25;
-          }
+          // Safety boundary clamp (keeps units strictly inside the visible viewport on all screens)
+          clampToPlayableBounds(ent.pos);
 
           ent.model.root.position.copy(ent.pos);
 
@@ -4164,6 +4382,9 @@
         themeIconWrap: document.getElementById('theme-icon-wrap'),
         themeText: document.getElementById('theme-text'),
         soundIconWrap: document.getElementById('sound-icon-wrap'),
+        themeIconWrapMobile: document.getElementById('theme-icon-wrap-mobile'),
+        themeTextMobile: document.getElementById('theme-text-mobile'),
+        soundIconWrapMobile: document.getElementById('sound-icon-wrap-mobile'),
 
         onboardingPill: document.getElementById('onboarding-pill'),
         toastBanner: document.getElementById('toast-banner'),
@@ -4215,7 +4436,7 @@
 
         dom.partyCountLabel.textContent = state.party.length;
         dom.hudPartyMiniIcons.innerHTML = state.party
-          .map(pId => `<span class="w-6 h-6 rounded-full bg-white/90 p-0.5 shadow-xs border border-indigo-300 inline-block">${POKEMON_PORTRAIT_SVGS[pId] || ''}</span>`)
+          .map(pId => `<span class="w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-white/95 p-0.5 shadow-xs border border-indigo-300 inline-block">${POKEMON_PORTRAIT_SVGS[pId] || ''}</span>`)
           .join('');
 
         if (!dom.feedBtnIllustration.innerHTML) {
@@ -4223,9 +4444,17 @@
         }
 
         sound.muted = state.muted;
-        dom.soundIconWrap.innerHTML = state.muted ? UI_SVGS.soundOff : UI_SVGS.soundOn;
-        dom.themeIconWrap.innerHTML = state.isNight ? UI_SVGS.moon : UI_SVGS.sun;
-        dom.themeText.textContent = state.isNight ? 'Night' : 'Day';
+        const soundSvg = state.muted ? UI_SVGS.soundOff : UI_SVGS.soundOn;
+        const themeSvg = state.isNight ? UI_SVGS.moon : UI_SVGS.sun;
+        const themeLabel = state.isNight ? 'Night' : 'Day';
+
+        dom.soundIconWrap.innerHTML = soundSvg;
+        dom.themeIconWrap.innerHTML = themeSvg;
+        dom.themeText.textContent = themeLabel;
+
+        if (dom.soundIconWrapMobile) dom.soundIconWrapMobile.innerHTML = soundSvg;
+        if (dom.themeIconWrapMobile) dom.themeIconWrapMobile.innerHTML = themeSvg;
+        if (dom.themeTextMobile) dom.themeTextMobile.textContent = themeLabel;
 
         const readyRecipe = RECIPES.find(canCookRecipe);
         if (readyRecipe) {
@@ -4242,20 +4471,27 @@
       function renderIngredientBag() {
         let html = '';
 
-        POKEMON_ORDER.forEach(pokeId => {
+        // On mobile horizontal scroll, list the active 5 party Pokémon's ingredients first
+        // so the player immediately sees what they are gathering without scrolling
+        const orderedIds = [
+          ...state.party,
+          ...POKEMON_ORDER.filter(id => !state.party.includes(id))
+        ];
+
+        orderedIds.forEach(pokeId => {
           const p = POKEMON_DATA[pokeId];
           const count = state.inventory[pokeId] || 0;
           const inParty = state.party.includes(pokeId);
 
           html += `
             <button type="button" data-bag-poke="${pokeId}"
-              class="bag-chip relative shrink-0 min-w-[68px] min-h-[68px] sm:min-w-0 flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl border-2 ${
+              class="bag-chip relative shrink-0 min-w-[62px] min-h-[62px] sm:min-w-0 sm:min-h-[66px] flex flex-col items-center justify-center py-1 px-1 rounded-2xl border-2 ${
                 inParty ? 'bg-emerald-50 border-emerald-400 shadow-xs' : 'bg-slate-50 border-slate-200'
               } active:scale-95 transition cursor-pointer"
               title="${p.ingredient.name} (${p.name})">
-              <span class="w-8 h-8 inline-block shrink-0">${INGREDIENT_SVGS[pokeId]}</span>
-              <span class="font-display font-black text-base leading-none mt-0.5 ${count > 0 ? 'text-slate-900' : 'text-slate-400'}">${count}</span>
-              ${inParty ? '<span class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-xs"></span>' : ''}
+              <span class="w-7 h-7 sm:w-8 sm:h-8 inline-block shrink-0">${INGREDIENT_SVGS[pokeId]}</span>
+              <span class="font-display font-black text-sm sm:text-base leading-none mt-0.5 ${count > 0 ? 'text-slate-900' : 'text-slate-400'}">${count}</span>
+              ${inParty ? '<span class="absolute -top-1 -right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-xs"></span>' : ''}
             </button>
           `;
         });
@@ -4610,21 +4846,25 @@
           openPartyModal();
         });
 
-        document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+        const handleToggleTheme = () => {
           state.isNight = !state.isNight;
           saveState();
           renderHud();
           sound.playUiPop(state.isNight ? 360 : 540);
           showToast(state.isNight ? 'Starry Sleep Camp lighting' : 'Sunny Meadow lighting');
-        });
+        };
+        document.getElementById('btn-theme-toggle').addEventListener('click', handleToggleTheme);
+        document.getElementById('btn-theme-toggle-mobile').addEventListener('click', handleToggleTheme);
 
-        document.getElementById('btn-sound-toggle').addEventListener('click', () => {
+        const handleToggleSound = () => {
           state.muted = !state.muted;
           sound.muted = state.muted;
           saveState();
           renderHud();
           if (!state.muted) sound.playUiPop(520);
-        });
+        };
+        document.getElementById('btn-sound-toggle').addEventListener('click', handleToggleSound);
+        document.getElementById('btn-sound-toggle-mobile').addEventListener('click', handleToggleSound);
 
         document.getElementById('btn-reset-open').addEventListener('click', () => {
           if (cutscene.active) return;
@@ -4658,11 +4898,14 @@
         const aspect = w / Math.max(h, 1);
 
         camera.aspect = aspect;
-        // Automatically adjust fixed diorama distance & FOV for portrait mobile screens
-        // so the entire meadow clearing, Snorlax, pot, and all 5 roaming Pokémon fit cleanly
-        if (aspect < 1.0) {
+        // Automatically adjust fixed diorama distance & FOV for tall portrait mobile screens
+        // (such as Pixel 10 Pro ~412x915, aspect ~0.45) so Snorlax and all roaming Pokémon stay framed
+        if (aspect < 0.68) {
+          camera.fov = 50;
+          FIXED_CAM.baseRadius = THREE.MathUtils.clamp(13.2 / Math.max(aspect, 0.44), 21.0, 28.0);
+        } else if (aspect < 1.0) {
           camera.fov = 47;
-          FIXED_CAM.baseRadius = THREE.MathUtils.clamp(16.2 / Math.max(aspect, 0.46), 18.0, 26.5);
+          FIXED_CAM.baseRadius = THREE.MathUtils.clamp(15.6 / Math.max(aspect, 0.68), 18.0, 23.0);
         } else {
           camera.fov = 43;
           FIXED_CAM.baseRadius = 16.5;
@@ -4671,6 +4914,15 @@
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
         applyFixedCameraPose();
+
+        // Keep any active wandering Pokémon cleanly inside the updated viewport bounds
+        activeEntities.forEach((ent, idx) => {
+          clampToPlayableBounds(ent.pos);
+          ent.model.root.position.copy(ent.pos);
+          if (!isInsidePlayableBounds(ent.target.x, ent.target.z, 0.1)) {
+            ent.target = pickWanderTarget(idx, ent.pos, ent.pos);
+          }
+        });
       }
 
       window.addEventListener('resize', handleResize);
