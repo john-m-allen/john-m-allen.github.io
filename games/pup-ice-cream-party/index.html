@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0288d1">
+  <meta name="description" content="Tap the rescue pups to serve matching ice cream, then tap again to help them enjoy their treat.">
+  <title>Pup Ice Cream Party!</title>
+  <link rel="manifest" href="../../manifest.json">
+  <style>
+    :root { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263238; background: #b3e5fc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: linear-gradient(#81d4fa 0 34%, #a5d6a7 34% 100%); }
+    header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: max(12px, env(safe-area-inset-top)) 16px 12px; background: rgba(255,255,255,.92); border-bottom: 3px solid #263238; }
+    .brand { font-weight: 850; font-size: clamp(1rem, 4vw, 1.3rem); }
+    .tools { display: flex; align-items: center; gap: 8px; }
+    button, .back { border: 2px solid #263238; border-radius: 999px; padding: 9px 13px; background: #fff9c4; color: #263238; font: inherit; font-weight: 750; text-decoration: none; cursor: pointer; }
+    button:active { transform: translateY(2px); }
+    .score { border-radius: 999px; padding: 9px 13px; background: white; border: 2px solid #263238; font-weight: 800; }
+    main { width: min(900px, calc(100% - 24px)); margin: 0 auto; padding: 22px 0 36px; }
+    .intro { text-align: center; margin: 4px auto 18px; }
+    .intro h1 { margin: 0 0 5px; font-size: clamp(1.7rem, 6vw, 2.5rem); }
+    .intro p { margin: 0; color: #264b37; }
+    .pups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 2vw, 16px); }
+    @media (min-width: 700px) { .pups { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .pup { min-height: 170px; padding: 14px 10px; border: 3px solid #263238; border-radius: 22px; background: rgba(255,255,255,.9); box-shadow: 0 5px 0 #263238; text-align: center; cursor: pointer; touch-action: manipulation; transition: transform .12s ease; }
+    .pup:active { transform: translateY(3px); box-shadow: 0 2px 0 #263238; }
+    .dog { display: block; font-size: clamp(3.1rem, 12vw, 5rem); line-height: 1.1; }
+    .pup-name { display: block; margin-top: 5px; font-weight: 850; }
+    .pup-status { display: block; min-height: 1.4em; margin-top: 3px; color: #455a64; font-size: .95rem; }
+    .hint { margin: 18px auto 0; text-align: center; color: #264b37; font-weight: 650; }
+    .back { display: inline-block; margin-top: 20px; background: white; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="back" href="../../">← Games</a>
+    <div class="brand">🐶 Pup Party</div>
+    <div class="tools"><span class="score" aria-live="polite">🍦 <span id="score">0</span></span><button id="serveAll" type="button">Serve all</button></div>
+  </header>
+  <main>
+    <section class="intro"><h1>Pup Ice Cream Party!</h1><p>Tap a pup to serve their treat, then tap again to enjoy it.</p></section>
+    <section class="pups" id="pups" aria-label="Rescue pups"></section>
+    <p class="hint" id="hint" aria-live="polite">Everyone's ready for a treat!</p>
+  </main>
+  <script>
+    const roster = [
+      { name: 'Blue', role: 'Police pup', emoji: '🐶', color: '#bbdefb', treat: '🍦', trash: false },
+      { name: 'Red', role: 'Fire pup', emoji: '🐕', color: '#ffcdd2', treat: '🍒🍦', trash: false },
+      { name: 'Yellow', role: 'Builder pup', emoji: '🐕‍🦺', color: '#fff9c4', treat: '🍦', trash: false },
+      { name: 'Pink', role: 'Pilot pup', emoji: '🐩', color: '#f8bbd0', treat: '🍦', trash: false },
+      { name: 'Orange', role: 'Water pup', emoji: '🐕', color: '#ffe0b2', treat: '🍦', trash: false },
+      { name: 'Green', role: 'Recycling pup', emoji: '🐕', color: '#c8e6c9', treat: '🗑️', trash: true }
+    ];
+    const states = roster.map(() => 'hungry');
+    const board = document.getElementById('pups');
+    const scoreEl = document.getElementById('score');
+    const hint = document.getElementById('hint');
+    let score = 0;
+    try { score = Number(localStorage.getItem('pup_party_score')) || 0; } catch (_) {}
+    scoreEl.textContent = score;
+
+    function updateCard(i) {
+      const pup = roster[i];
+      const card = board.children[i];
+      const state = states[i];
+      card.style.background = pup.color;
+      card.setAttribute('aria-label', `${pup.name}, ${state === 'hungry' ? 'tap to serve' : state === 'holding' ? 'tap to eat' : 'happy'}`);
+      card.querySelector('.pup-status').textContent = state === 'hungry' ? (pup.trash ? 'Tap to find a snack' : `Wants ${pup.treat}`) : state === 'holding' ? `Tap to eat ${pup.trash ? 'a snack' : 'the treat'}!` : 'Yum! Happy pup!';
+      card.querySelector('.dog').textContent = state === 'holding' ? `${pup.emoji} ${pup.trash ? '🦴' : pup.treat}` : state === 'happy' ? `${pup.emoji} 💚` : pup.emoji;
+    }
+
+    roster.forEach((pup, i) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pup';
+      card.innerHTML = '<span class="dog" aria-hidden="true"></span><span class="pup-name"></span><span class="pup-status"></span>';
+      card.querySelector('.pup-name').textContent = `${pup.name} · ${pup.role}`;
+      card.addEventListener('click', () => serve(i));
+      board.appendChild(card);
+      updateCard(i);
+    });
+
+    function serve(i) {
+      if (states[i] === 'hungry') {
+        states[i] = 'holding';
+        hint.textContent = `${roster[i].name} got a treat! Tap again to help them eat.`;
+      } else if (states[i] === 'holding') {
+        states[i] = 'happy';
+        score += 1;
+        scoreEl.textContent = score;
+        try { localStorage.setItem('pup_party_score', String(score)); } catch (_) {}
+        hint.textContent = `Yum! ${roster[i].name} is happy!`;
+        window.setTimeout(() => { states[i] = 'hungry'; updateCard(i); }, 1000);
+      } else {
+        hint.textContent = `${roster[i].name} is ready for another treat soon!`;
+      }
+      updateCard(i);
+    }
+
+    document.getElementById('serveAll').addEventListener('click', () => {
+      const hungry = states.map((state, i) => state === 'hungry' ? i : -1).filter(i => i !== -1);
+      if (hungry.length) {
+        hungry.forEach((i, order) => window.setTimeout(() => serve(i), order * 100));
+      } else {
+        states.forEach((state, i) => { if (state === 'holding') serve(i); });
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('../../sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
