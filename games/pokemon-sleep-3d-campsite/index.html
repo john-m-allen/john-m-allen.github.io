@@ -61,12 +61,31 @@
     }
 
     @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(251, 146, 60, 0.68); }
-      50% { box-shadow: 0 0 0 10px rgba(251, 146, 60, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.72); }
+      50% { box-shadow: 0 0 0 12px rgba(34, 197, 94, 0); }
     }
 
     .animate-cook-ready {
-      animation: pulseGlow 1.8s infinite;
+      animation: pulseGlow 1.6s infinite;
+    }
+
+    @keyframes toddlerBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-4px) scale(1.03); }
+    }
+
+    .animate-toddler-bounce {
+      animation: toddlerBounce 1.4s ease-in-out infinite;
+    }
+
+    @keyframes counterPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.42); }
+      100% { transform: scale(1); }
+    }
+
+    .animate-counter-pop {
+      animation: counterPop 0.36s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .no-scrollbar::-webkit-scrollbar {
@@ -92,68 +111,66 @@
 </head>
 <body class="h-dvh w-screen overflow-hidden select-none">
 
-  <!-- ========================================================================
-       FULLSCREEN FIXED-CAMERA 3D THREE.JS VIEWPORT CANVAS
-       ======================================================================== -->
+  <!-- Full-Viewport Fixed 3D Campsite Canvas & Floating 2D Effects Layer -->
   <canvas id="game-canvas"></canvas>
+  <div id="fx-layer" class="pointer-events-none fixed inset-0 z-30 overflow-hidden"></div>
 
   <!-- ========================================================================
-       FLOATING 2D PARTICLE & LABEL OVERLAY (PROJECTED FROM 3D COORDINATES)
+       TOP MOBILE HUD: PICTURE-FIRST SLEEP RANK, 5-POKÉMON PARTY & DAY/NIGHT
        ======================================================================== -->
-  <div id="fx-layer" class="pointer-events-none fixed inset-0 z-10 overflow-hidden"></div>
-
-  <!-- ========================================================================
-       TOP MOBILE HUD: SLEEP RANK, STRENGTH BAR & DAY/NIGHT CONTROLS
-       ======================================================================== -->
-  <header class="pointer-events-none fixed top-0 inset-x-0 z-20 px-3 pt-3 sm:px-5 sm:pt-4 flex items-start justify-between gap-2">
-    <!-- Snorlax Sleep Rank & Strength Card -->
-    <div class="pointer-events-auto flex items-center gap-2.5 bg-white/92 backdrop-blur-md border-2 border-amber-200/90 shadow-lg rounded-2xl px-3 py-2 flex-1 max-w-[315px]">
-      <!-- Rank Crest Badge -->
-      <div id="rank-badge" class="flex flex-col items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-inner shrink-0">
-        <span class="text-[9px] uppercase tracking-wider font-extrabold opacity-90">Rank</span>
+  <header class="pointer-events-none fixed top-0 inset-x-0 z-20 px-2.5 pt-2.5 sm:px-5 sm:pt-4 flex items-stretch justify-between gap-2">
+    <!-- Snorlax Sleep Rank & Big Star Progress Card (64px+ Touch Height) -->
+    <div class="pointer-events-auto min-h-[64px] flex items-center gap-2.5 bg-white/95 backdrop-blur-md border-3 border-amber-300 shadow-lg rounded-3xl px-3 py-2 flex-1 max-w-[300px]">
+      <!-- Rank Crest Badge with Star -->
+      <div id="rank-badge" class="flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-inner shrink-0">
+        <svg class="w-4 h-4 text-yellow-200 drop-shadow-xs" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         <span id="rank-tier-short" class="font-display text-sm font-bold leading-tight">B-1</span>
       </div>
 
-      <!-- Strength Counter & Progress Bar -->
+      <!-- Visual Star Progress Bar -->
       <div class="flex-1 min-w-0">
-        <div class="flex items-baseline justify-between gap-1.5">
+        <div class="flex items-center justify-between gap-1">
           <span id="rank-label" class="font-display font-bold text-slate-800 text-sm sm:text-base truncate">Basic 1</span>
-          <span class="text-xs font-extrabold text-amber-600 flex items-center gap-1 shrink-0">
-            <svg class="w-3.5 h-3.5 text-amber-500" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+          <span class="text-xs sm:text-sm font-black text-amber-600 flex items-center gap-0.5 shrink-0">
+            <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span id="strength-value">0</span>
           </span>
         </div>
-        <div class="w-full h-2.5 bg-slate-200/90 rounded-full overflow-hidden mt-1 p-0.5">
-          <div id="rank-progress-bar" class="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 transition-all duration-700" style="width: 0%;"></div>
+        <div class="w-full h-3.5 bg-slate-200 rounded-full overflow-hidden mt-1 p-0.5 border border-slate-300/70">
+          <div id="rank-progress-bar" class="h-full rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 transition-all duration-700" style="width: 0%;"></div>
         </div>
-        <div class="flex justify-between text-[10px] font-bold text-slate-500 mt-0.5">
-          <span>Snorlax Strength</span>
-          <span id="next-rank-label">Next: 1,200</span>
+        <div class="flex justify-between text-[10px] font-extrabold text-slate-500 mt-0.5">
+          <span>Stars</span>
+          <span id="next-rank-label">1,200</span>
         </div>
       </div>
     </div>
 
-    <!-- Top-Right Quick Controls -->
-    <div class="pointer-events-auto flex items-center gap-1.5 shrink-0">
-      <!-- Day / Night Toggle -->
+    <!-- Top-Right Large 64px+ Toddler Touch Controls -->
+    <div class="pointer-events-auto flex items-center gap-2 shrink-0">
+      <!-- Large Party Button Showing All 5 Active Pokémon Mini-Icons -->
+      <button id="btn-open-party" type="button" aria-label="Change 5 Pokémon Party"
+        class="min-h-[64px] flex flex-col items-center justify-center bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 active:scale-95 text-white px-3 py-1.5 rounded-3xl shadow-lg border-b-4 border-indigo-800 transition cursor-pointer">
+        <div id="hud-party-mini-icons" class="flex items-center -space-x-1.5">
+          <!-- Populated dynamically with the 5 active Pokémon mini-SVGs -->
+        </div>
+        <span class="font-display font-bold text-[11px] sm:text-xs tracking-wide mt-0.5">
+          Party (<span id="party-count-label">5</span>/5)
+        </span>
+      </button>
+
+      <!-- Large 64x64 Sun / Moon Toggle -->
       <button id="btn-theme-toggle" type="button" aria-label="Toggle Day and Night"
-        class="flex items-center justify-center gap-1.5 bg-white/92 hover:bg-white active:scale-95 text-slate-800 font-bold text-xs sm:text-sm px-3 py-2.5 rounded-2xl shadow-md border-b-4 border-slate-300 transition cursor-pointer">
-        <span id="theme-icon-wrap" class="w-4 h-4 flex items-center justify-center"></span>
-        <span id="theme-text" class="hidden sm:inline">Day</span>
+        class="w-16 h-16 flex flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
+        <span id="theme-icon-wrap" class="w-7 h-7 flex items-center justify-center"></span>
+        <span id="theme-text" class="text-[11px] leading-none mt-0.5">Day</span>
       </button>
 
-      <!-- Sound Mute Toggle -->
+      <!-- Large 64x64 Sound Toggle -->
       <button id="btn-sound-toggle" type="button" aria-label="Toggle Sound"
-        class="flex items-center justify-center bg-white/92 hover:bg-white active:scale-95 text-slate-800 font-bold p-2.5 rounded-2xl shadow-md border-b-4 border-slate-300 transition cursor-pointer">
-        <span id="sound-icon-wrap" class="w-4 h-4 flex items-center justify-center"></span>
-      </button>
-
-      <!-- Reset Progress Button -->
-      <button id="btn-reset-open" type="button" aria-label="Reset Camp"
-        class="flex items-center justify-center bg-white/92 hover:bg-rose-50 active:scale-95 text-rose-600 font-bold p-2.5 rounded-2xl shadow-md border-b-4 border-slate-300 transition cursor-pointer">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
-        </svg>
+        class="w-16 h-16 flex flex-col items-center justify-center bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-display font-bold text-xs rounded-3xl shadow-lg border-b-4 border-slate-300 transition cursor-pointer">
+        <span id="sound-icon-wrap" class="w-7 h-7 flex items-center justify-center"></span>
+        <span id="sound-text" class="text-[11px] leading-none mt-0.5">Sound</span>
       </button>
     </div>
   </header>
@@ -161,10 +178,10 @@
   <!-- ========================================================================
        FLOATING ONBOARDING TIP & TOAST BANNERS
        ======================================================================== -->
-  <div id="onboarding-pill" class="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-20 transition-all duration-500">
-    <div class="bg-slate-900/85 backdrop-blur-md text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-lg border border-white/15 whitespace-nowrap flex items-center gap-1.5">
-      <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-      <span>Tap Pokémon to gather • Tap Snorlax or Pot to cook!</span>
+  <div id="onboarding-pill" class="pointer-events-none fixed top-22 left-1/2 -translate-x-1/2 z-20 transition-all duration-500 mt-1">
+    <div class="bg-slate-900/85 backdrop-blur-md text-white font-display font-bold text-xs sm:text-sm px-4 py-1.5 rounded-full shadow-lg border border-white/20 whitespace-nowrap flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping"></span>
+      <span>Tap Pokémon for treats • Tap Snorlax to cook!</span>
     </div>
   </div>
 
@@ -195,48 +212,27 @@
   </div>
 
   <!-- ========================================================================
-       BOTTOM MOBILE DOCK: INGREDIENTS BAG STRIP + PARTY & COOK BUTTONS
+       BOTTOM TODDLER DOCK: BIG INGREDIENT CARDS + GIANT 'FEED SNORLAX!' BUTTON
        ======================================================================== -->
-  <footer id="bottom-dock" class="pointer-events-none fixed bottom-0 inset-x-0 z-20 px-2.5 pb-2.5 sm:px-5 sm:pb-4 transition-transform duration-300">
-    <div class="pointer-events-auto max-w-3xl mx-auto bg-white/92 backdrop-blur-md border-2 border-amber-200/90 shadow-2xl rounded-3xl p-2 sm:p-3 space-y-2">
-      <!-- Compact Horizontal Swipeable / Responsive 9-Ingredient Bag -->
-      <div class="flex items-center justify-between px-1">
-        <span class="font-display font-bold text-[11px] sm:text-xs uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 11h14l-1.5 9h-11z"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/>
-          </svg>
-          <span>Ingredient Bag</span>
+  <footer id="bottom-dock" class="pointer-events-none fixed bottom-0 inset-x-0 z-20 px-2 pb-2 sm:px-4 sm:pb-3.5 transition-transform duration-300">
+    <div class="pointer-events-auto max-w-4xl mx-auto bg-white/95 backdrop-blur-md border-3 border-amber-300 shadow-2xl rounded-3xl p-2 sm:p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+      <!-- Large Visual Ingredient Dock (9 Big Custom SVG Cards) -->
+      <div id="ingredient-bag-strip" class="flex sm:grid sm:grid-cols-9 gap-1.5 overflow-x-auto no-scrollbar flex-1 py-0.5">
+        <!-- Populated dynamically via JS with large custom SVG icons -->
+      </div>
+
+      <!-- GIANT Pulsing Green 'FEED SNORLAX!' Button (72px+ Touch Target) -->
+      <button id="btn-open-cook" type="button"
+        class="relative min-h-[72px] sm:min-w-[205px] flex items-center justify-center gap-2.5 bg-gradient-to-b from-emerald-400 via-green-500 to-green-600 hover:from-emerald-300 hover:to-green-500 active:scale-95 text-white font-display font-bold text-base sm:text-lg px-4 py-2.5 rounded-2xl shadow-xl border-b-4 border-green-800 transition cursor-pointer shrink-0">
+        <span id="feed-btn-illustration" class="w-11 h-11 shrink-0 drop-shadow"></span>
+        <div class="text-left leading-tight">
+          <div class="text-base sm:text-lg font-extrabold tracking-wide drop-shadow-xs">FEED SNORLAX!</div>
+          <div id="feed-btn-subtext" class="text-[11px] font-bold text-emerald-100">Tap to Cook Meal</div>
+        </div>
+        <span id="cook-ready-badge" class="hidden absolute -top-2.5 right-3 bg-yellow-400 text-slate-950 font-display text-xs font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border-2 border-white shadow-md">
+          YUM READY!
         </span>
-        <span class="text-[11px] font-bold text-slate-500">
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1"></span>In Party • Total: <strong id="total-ingredients-count" class="text-slate-800">0</strong>
-        </span>
-      </div>
-
-      <div id="ingredient-bag-strip" class="flex sm:grid sm:grid-cols-9 gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-        <!-- Populated dynamically via JS with custom SVG icons -->
-      </div>
-
-      <!-- Primary Large Touch Action Buttons -->
-      <div class="grid grid-cols-2 gap-2 pt-0.5">
-        <button id="btn-open-party" type="button"
-          class="flex items-center justify-center gap-2 bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base py-3 px-4 rounded-2xl shadow-md border-b-4 border-indigo-800 transition cursor-pointer">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-          </svg>
-          <span>Party (<span id="party-count-label">5</span>/5)</span>
-        </button>
-
-        <button id="btn-open-cook" type="button"
-          class="relative flex items-center justify-center gap-2 bg-gradient-to-b from-amber-400 via-orange-500 to-orange-600 hover:from-amber-300 hover:to-orange-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base py-3 px-4 rounded-2xl shadow-md border-b-4 border-orange-800 transition cursor-pointer">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 11h16a1 1 0 0 1 1 1v2a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7v-2a1 1 0 0 1 1-1z"/><path d="M8 7c0-1.5 1-2 1-3.5"/><path d="M12 7c0-1.5 1-2 1-3.5"/><path d="M16 7c0-1.5 1-2 1-3.5"/>
-          </svg>
-          <span>Cook Meal</span>
-          <span id="cook-ready-badge" class="hidden absolute -top-2 right-2 bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-white shadow">
-            Ready!
-          </span>
-        </button>
-      </div>
+      </button>
     </div>
   </footer>
 
@@ -275,63 +271,67 @@
       </div>
 
       <!-- Footer -->
-      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-        <span id="party-modal-hint" class="text-xs font-bold text-indigo-600">Party is full (5/5).</span>
+      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
+        <button id="btn-reset-open" type="button"
+          class="min-h-[48px] bg-rose-100 hover:bg-rose-200 text-rose-700 font-display font-bold text-xs sm:text-sm px-4 py-2 rounded-2xl transition cursor-pointer">
+          Reset Camp
+        </button>
+        <span id="party-modal-hint" class="text-xs font-bold text-indigo-600 hidden sm:inline">Party is full (5/5).</span>
         <button id="btn-done-party" type="button"
-          class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-display font-bold text-sm px-6 py-2.5 rounded-2xl shadow-md transition cursor-pointer">
-          Done
+          class="min-h-[52px] bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-display font-bold text-base px-8 py-2.5 rounded-2xl shadow-md transition cursor-pointer">
+          Done!
         </button>
       </div>
     </div>
   </div>
 
   <!-- ========================================================================
-       DRAWER MODAL 2: COOKING POT MENU (EXACT 5 DISHES + QUICK COOK)
+       DRAWER MODAL 2: VISUAL COOKING SHEET (2-COLUMN PICTURE RECIPE CARDS)
        ======================================================================== -->
   <div id="modal-cook" class="hidden fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="animate-modal-pop bg-amber-50 w-full max-w-2xl max-h-[88dvh] rounded-t-3xl sm:rounded-3xl shadow-2xl border-t-4 sm:border-4 border-amber-300 flex flex-col overflow-hidden">
+    <div class="animate-modal-pop bg-amber-50 w-full max-w-3xl max-h-[90dvh] rounded-t-3xl sm:rounded-3xl shadow-2xl border-t-4 sm:border-4 border-amber-300 flex flex-col overflow-hidden">
       <!-- Header -->
-      <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-5 py-3.5 text-white flex items-center justify-between shrink-0">
+      <div class="bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-5 py-3.5 text-white flex items-center justify-between shrink-0">
         <div>
-          <h3 class="font-display text-lg sm:text-xl font-bold flex items-center gap-2">
-            <span>Snorlax's Cooking Pot</span>
+          <h3 class="font-display text-xl sm:text-2xl font-bold flex items-center gap-2">
+            <span>Feed Snorlax & Friends!</span>
           </h3>
-          <p class="text-xs text-amber-100 font-semibold">Feeds Snorlax & all 5 party Pokémon! 25% <strong>Extra Tasty (2x)</strong> chance!</p>
+          <p class="text-xs sm:text-sm text-emerald-50 font-bold">Tap a glowing green dish to cook, or tap a missing treat for help!</p>
         </div>
-        <button id="btn-close-cook" type="button" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white font-bold text-lg transition cursor-pointer">
+        <button id="btn-close-cook" type="button" class="w-12 h-12 rounded-2xl bg-white/25 hover:bg-white/35 flex items-center justify-center text-white font-bold text-xl transition cursor-pointer">
           ✕
         </button>
       </div>
 
       <!-- Quick-Cook Ready Dish Action Bar -->
-      <div id="quick-cook-bar" class="hidden bg-emerald-100/90 border-b border-emerald-200 px-4 py-2.5 flex items-center justify-between gap-2 shrink-0">
+      <div id="quick-cook-bar" class="hidden bg-emerald-100 border-b-2 border-emerald-300 px-4 py-2.5 flex items-center justify-between gap-2 shrink-0">
         <div class="flex items-center gap-2.5 min-w-0">
-          <div id="quick-cook-icon" class="w-8 h-8 shrink-0"></div>
+          <div id="quick-cook-icon" class="w-10 h-10 shrink-0"></div>
           <div class="min-w-0">
-            <div class="text-xs font-extrabold text-emerald-900 truncate" id="quick-cook-label">Pizza is ready to cook!</div>
-            <div class="text-[10px] font-bold text-emerald-700">Feeds everyone in camp right away</div>
+            <div class="text-sm font-display font-bold text-emerald-950 truncate" id="quick-cook-label">Pizza is ready!</div>
+            <div class="text-xs font-bold text-emerald-700">Tap to feed everyone!</div>
           </div>
         </div>
         <button id="btn-quick-cook" type="button"
-          class="shrink-0 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-xs sm:text-sm px-4 py-2 rounded-xl shadow transition cursor-pointer">
-          Quick Cook
+          class="min-h-[52px] shrink-0 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base px-5 py-2.5 rounded-2xl shadow-md border-b-4 border-emerald-800 transition cursor-pointer">
+          COOK NOW!
         </button>
       </div>
 
-      <!-- 5 Recipes List -->
-      <div id="recipes-list" class="p-3.5 overflow-y-auto custom-scroll flex-1 space-y-2.5">
+      <!-- 2-Column Visual Picture Recipe Cards -->
+      <div id="recipes-list" class="p-3 sm:p-4 overflow-y-auto custom-scroll flex-1 grid grid-cols-1 min-[440px]:grid-cols-2 gap-3">
         <!-- Rendered dynamically -->
       </div>
 
       <!-- Footer -->
-      <div class="px-4 py-3 bg-amber-100/80 border-t border-amber-200 flex items-center justify-between shrink-0">
+      <div class="px-4 py-3 bg-amber-100/90 border-t border-amber-200 flex items-center justify-between gap-2 shrink-0">
         <button id="btn-cook-to-party" type="button"
-          class="text-xs font-extrabold text-indigo-700 hover:text-indigo-900 flex items-center gap-1.5 cursor-pointer">
-          <span>Swap Party Pokémon</span>
+          class="min-h-[52px] bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-display font-bold text-xs sm:text-sm px-4 py-2.5 rounded-2xl transition cursor-pointer">
+          Switch Pokémon
         </button>
         <button id="btn-close-cook-bottom" type="button"
-          class="bg-slate-800 hover:bg-slate-700 text-white font-display font-bold text-xs sm:text-sm px-5 py-2 rounded-2xl transition cursor-pointer">
-          Close
+          class="min-h-[52px] bg-slate-800 hover:bg-slate-700 text-white font-display font-bold text-sm sm:text-base px-7 py-2.5 rounded-2xl transition cursor-pointer">
+          Back to Camp
         </button>
       </div>
     </div>
@@ -376,25 +376,41 @@
             (ALL 9 POKÉMON PORTRAITS, 9 UNIQUE INGREDIENTS, 5 DISHES & UI ICONS)
          ====================================================================== */
       const UI_SVGS = {
-        sun: `<svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><path stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>`,
-        moon: `<svg class="w-4 h-4 text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
-        soundOn: `<svg class="w-4 h-4 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
-        soundOff: `<svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`,
-        heart: `<svg class="w-6 h-6" viewBox="0 0 32 32"><defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff85a2"/><stop offset="100%" stop-color="#f43f5e"/></linearGradient></defs><path d="M16 28C16 28 4 19.5 4 11.2C4 7.2 7.2 4 11.1 4C13.5 4 15.2 5.2 16 6.8C16.8 5.2 18.5 4 20.9 4C24.8 4 28 7.2 28 11.2C28 19.5 16 28 16 28Z" fill="url(#hg)" stroke="#be123c" stroke-width="1.8"/><ellipse cx="10.5" cy="9.5" rx="2.5" ry="1.4" transform="rotate(-25 10.5 9.5)" fill="#fff" opacity="0.75"/></svg>`,
-        note: `<svg class="w-6 h-6" viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fde047"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs><path d="M12 23V7l14-3v16" fill="none" stroke="#b45309" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 23V7l14-3v16" fill="none" stroke="url(#ng)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="23.5" r="4.2" fill="url(#ng)" stroke="#b45309" stroke-width="1.6"/><circle cx="22.5" cy="20.5" r="4.2" fill="url(#ng)" stroke="#b45309" stroke-width="1.6"/></svg>`,
-        zzz: `<svg class="w-6 h-6" viewBox="0 0 32 32"><path d="M7 10h9l-9 10h9M18 5h7l-7 7h7" fill="none" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10h9l-9 10h9M18 5h7l-7 7h7" fill="none" stroke="#e0f2fe" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+        sun: `<svg class="w-full h-full text-amber-500" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/><path stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>`,
+        moon: `<svg class="w-full h-full text-indigo-600" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+        soundOn: `<svg class="w-full h-full text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+        soundOff: `<svg class="w-full h-full text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`,
+        check: `<svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+        snorlaxPot: `<svg viewBox="0 0 56 56" class="w-full h-full">
+          <circle cx="24" cy="24" r="16" fill="#2d7486" stroke="#134e4a" stroke-width="2.2"/>
+          <path d="M13 24c0-6 4.5-10 11-10s11 4 11 10c0 6.5-4.5 10-11 10s-11-3.5-11-10z" fill="#fef3c7"/>
+          <path d="M17 22q2.5-3 5 0M26 22q2.5-3 5 0" fill="none" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M19 28q5 4 10 0" fill="none" stroke="#1e293b" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M27 36h22c0 8-4.5 13-11 13s-11-5-11-13z" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+          <ellipse cx="38" cy="36" rx="10" ry="3.2" fill="#fb923c"/>
+          <path d="M35 31c0-2 1.5-2.5 1.5-4.5M41 31c0-2 1.5-2.5 1.5-4.5" stroke="#fef08a" stroke-width="2" stroke-linecap="round"/>
+        </svg>`,
+        heart: `<svg class="w-7 h-7" viewBox="0 0 32 32"><defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff85a2"/><stop offset="100%" stop-color="#f43f5e"/></linearGradient></defs><path d="M16 28C16 28 4 19.5 4 11.2C4 7.2 7.2 4 11.1 4C13.5 4 15.2 5.2 16 6.8C16.8 5.2 18.5 4 20.9 4C24.8 4 28 7.2 28 11.2C28 19.5 16 28 16 28Z" fill="url(#hg)" stroke="#be123c" stroke-width="1.8"/><ellipse cx="10.5" cy="9.5" rx="2.5" ry="1.4" transform="rotate(-25 10.5 9.5)" fill="#fff" opacity="0.75"/></svg>`,
+        note: `<svg class="w-7 h-7" viewBox="0 0 32 32"><defs><linearGradient id="ng" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fde047"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs><path d="M12 23V7l14-3v16" fill="none" stroke="#b45309" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 23V7l14-3v16" fill="none" stroke="url(#ng)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="23.5" r="4.2" fill="url(#ng)" stroke="#b45309" stroke-width="1.6"/><circle cx="22.5" cy="20.5" r="4.2" fill="url(#ng)" stroke="#b45309" stroke-width="1.6"/></svg>`,
+        zzz: `<svg class="w-7 h-7" viewBox="0 0 32 32"><path d="M7 10h9l-9 10h9M18 5h7l-7 7h7" fill="none" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10h9l-9 10h9M18 5h7l-7 7h7" fill="none" stroke="#e0f2fe" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
       };
 
+      // Exact Pokémon -> Ingredient SVG Mapping:
+      // Espeon -> Sunlit Wheat, Pikachu -> Spark Cheese, Mew -> Mystic Egg,
+      // Gengar -> Shadow Beef, Blastoise -> Hydro Rice, Applin -> Crisp Apple,
+      // Zapdos -> Thunder Chicken, Eevee -> Creamy Milk, Fuecoco -> Blaze Tomato
       const INGREDIENT_SVGS = {
         espeon: `<svg viewBox="0 0 48 48" class="w-full h-full">
           <defs>
-            <radialGradient id="eggG" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fdf4ff"/><stop offset="55%" stop-color="#e9d5ff"/><stop offset="100%" stop-color="#a855f7"/></radialGradient>
-            <linearGradient id="eggAura" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#facc15"/><stop offset="100%" stop-color="#c084fc"/></linearGradient>
+            <linearGradient id="whG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fef08a"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
           </defs>
-          <ellipse cx="24" cy="26" rx="16" ry="18" fill="none" stroke="url(#eggAura)" stroke-width="2" stroke-dasharray="4 3"/>
-          <path d="M24 7C16 7 11 18 11 28C11 36.5 16.8 42 24 42C31.2 42 37 36.5 37 28C37 18 32 7 24 7Z" fill="url(#eggG)" stroke="#6b21a8" stroke-width="2.2"/>
-          <circle cx="19" cy="20" r="2.2" fill="#c084fc" opacity="0.65"/><circle cx="29" cy="27" r="2.8" fill="#c084fc" opacity="0.55"/><circle cx="21" cy="33" r="1.8" fill="#facc15" opacity="0.8"/>
-          <ellipse cx="18.5" cy="15" rx="2.6" ry="4.5" transform="rotate(-22 18.5 15)" fill="#fff" opacity="0.85"/>
+          <path d="M14 40L29 12M19 41L34 15M11 35L23 11" stroke="#b45309" stroke-width="2.6" stroke-linecap="round"/>
+          <ellipse cx="29" cy="12" rx="2.8" ry="4.6" transform="rotate(28 29 12)" fill="url(#whG)" stroke="#92400e" stroke-width="1.6"/>
+          <ellipse cx="25" cy="19" rx="2.8" ry="4.6" transform="rotate(28 25 19)" fill="url(#whG)" stroke="#92400e" stroke-width="1.6"/>
+          <ellipse cx="34" cy="16" rx="2.6" ry="4.4" transform="rotate(35 34 16)" fill="url(#whG)" stroke="#92400e" stroke-width="1.6"/>
+          <ellipse cx="30" cy="23" rx="2.6" ry="4.4" transform="rotate(35 30 23)" fill="url(#whG)" stroke="#92400e" stroke-width="1.6"/>
+          <ellipse cx="22" cy="13" rx="2.5" ry="4.2" transform="rotate(18 22 13)" fill="url(#whG)" stroke="#92400e" stroke-width="1.6"/>
+          <path d="M13 33l6 4" stroke="#a855f7" stroke-width="3" stroke-linecap="round"/>
         </svg>`,
 
         pikachu: `<svg viewBox="0 0 48 48" class="w-full h-full">
@@ -410,13 +426,13 @@
 
         mew: `<svg viewBox="0 0 48 48" class="w-full h-full">
           <defs>
-            <linearGradient id="milkGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="50%" stop-color="#ffffff"/><stop offset="100%" stop-color="#bae6fd"/></linearGradient>
+            <radialGradient id="eggG" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fdf4ff"/><stop offset="55%" stop-color="#fbcfe8"/><stop offset="100%" stop-color="#ec4899"/></radialGradient>
+            <linearGradient id="eggAura" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#facc15"/><stop offset="100%" stop-color="#f472b6"/></linearGradient>
           </defs>
-          <path d="M19 8h10v5l5 7v19a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V20l5-7V8z" fill="url(#milkGlass)" stroke="#0284c7" stroke-width="2.2" stroke-linejoin="round"/>
-          <path d="M15.5 23c3-1.5 6 1.5 9 0s5.5-1.2 8 0v15.5a1.5 1.5 0 0 1-1.5 1.5h-14a1.5 1.5 0 0 1-1.5-1.5V23z" fill="#ffffff"/>
-          <rect x="17.5" y="6" width="13" height="3.5" rx="1.5" fill="#f472b6" stroke="#be185d" stroke-width="1.6"/>
-          <rect x="15.5" y="28" width="17" height="6" rx="1.5" fill="#fbcfe8" stroke="#ec4899" stroke-width="1.2"/>
-          <line x1="18" y1="15" x2="18" y2="36" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+          <ellipse cx="24" cy="26" rx="16" ry="18" fill="none" stroke="url(#eggAura)" stroke-width="2" stroke-dasharray="4 3"/>
+          <path d="M24 7C16 7 11 18 11 28C11 36.5 16.8 42 24 42C31.2 42 37 36.5 37 28C37 18 32 7 24 7Z" fill="url(#eggG)" stroke="#9d174d" stroke-width="2.2"/>
+          <circle cx="19" cy="20" r="2.2" fill="#f472b6" opacity="0.65"/><circle cx="29" cy="27" r="2.8" fill="#f472b6" opacity="0.55"/><circle cx="21" cy="33" r="1.8" fill="#facc15" opacity="0.85"/>
+          <ellipse cx="18.5" cy="15" rx="2.6" ry="4.5" transform="rotate(-22 18.5 15)" fill="#fff" opacity="0.85"/>
         </svg>`,
 
         gengar: `<svg viewBox="0 0 48 48" class="w-full h-full">
@@ -465,15 +481,13 @@
 
         eevee: `<svg viewBox="0 0 48 48" class="w-full h-full">
           <defs>
-            <linearGradient id="whG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fef08a"/><stop offset="100%" stop-color="#d97706"/></linearGradient>
+            <linearGradient id="milkGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="50%" stop-color="#ffffff"/><stop offset="100%" stop-color="#bae6fd"/></linearGradient>
           </defs>
-          <path d="M14 40L29 12M19 41L34 15M11 35L23 11" stroke="#b45309" stroke-width="2.4" stroke-linecap="round"/>
-          <ellipse cx="29" cy="12" rx="2.6" ry="4.4" transform="rotate(28 29 12)" fill="url(#whG)" stroke="#92400e" stroke-width="1.5"/>
-          <ellipse cx="25" cy="19" rx="2.6" ry="4.4" transform="rotate(28 25 19)" fill="url(#whG)" stroke="#92400e" stroke-width="1.5"/>
-          <ellipse cx="34" cy="16" rx="2.5" ry="4.2" transform="rotate(35 34 16)" fill="url(#whG)" stroke="#92400e" stroke-width="1.5"/>
-          <ellipse cx="30" cy="23" rx="2.5" ry="4.2" transform="rotate(35 30 23)" fill="url(#whG)" stroke="#92400e" stroke-width="1.5"/>
-          <ellipse cx="22" cy="13" rx="2.4" ry="4" transform="rotate(18 22 13)" fill="url(#whG)" stroke="#92400e" stroke-width="1.5"/>
-          <path d="M13 33l6 4" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+          <path d="M19 8h10v5l5 7v19a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3V20l5-7V8z" fill="url(#milkGlass)" stroke="#0284c7" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M15.5 23c3-1.5 6 1.5 9 0s5.5-1.2 8 0v15.5a1.5 1.5 0 0 1-1.5 1.5h-14a1.5 1.5 0 0 1-1.5-1.5V23z" fill="#ffffff"/>
+          <rect x="17.5" y="6" width="13" height="3.5" rx="1.5" fill="#f59e0b" stroke="#92400e" stroke-width="1.6"/>
+          <rect x="15.5" y="28" width="17" height="6" rx="1.5" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+          <line x1="18" y1="15" x2="18" y2="36" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
         </svg>`,
 
         fuecoco: `<svg viewBox="0 0 48 48" class="w-full h-full">
@@ -620,7 +634,7 @@
           id: 'espeon',
           name: 'Espeon',
           colorHex: '#d8b4fe',
-          ingredient: { id: 'egg', name: 'Mystic Egg', shortName: 'Egg' },
+          ingredient: { id: 'wheat', name: 'Sunlit Wheat', shortName: 'Wheat' },
           pitch: 587.33
         },
         pikachu: {
@@ -634,7 +648,7 @@
           id: 'mew',
           name: 'Mew',
           colorHex: '#f9a8d4',
-          ingredient: { id: 'milk', name: 'Creamy Milk', shortName: 'Milk' },
+          ingredient: { id: 'egg', name: 'Mystic Egg', shortName: 'Egg' },
           pitch: 783.99
         },
         gengar: {
@@ -669,7 +683,7 @@
           id: 'eevee',
           name: 'Eevee',
           colorHex: '#d97706',
-          ingredient: { id: 'wheat', name: 'Sunlit Wheat', shortName: 'Wheat' },
+          ingredient: { id: 'milk', name: 'Creamy Milk', shortName: 'Milk' },
           pitch: 493.88
         },
         fuecoco: {
@@ -694,10 +708,10 @@
           id: 'pizza',
           name: 'Pizza',
           baseStrength: 1200,
-          description: 'Crispy Sunlit Wheat crust layered with sweet Blaze Tomato sauce and bubbly Spark Cheese.',
+          description: 'Crispy Sunlit Wheat crust with Spark Cheese and Blaze Tomato.',
           ingredients: [
-            { pokemonId: 'eevee', count: 2 },
-            { pokemonId: 'pikachu', count: 2 },
+            { pokemonId: 'espeon', count: 2 },
+            { pokemonId: 'pikachu', count: 1 },
             { pokemonId: 'fuecoco', count: 1 }
           ]
         },
@@ -705,20 +719,20 @@
           id: 'hamburger',
           name: 'Hamburger',
           baseStrength: 1400,
-          description: 'Juicy Shadow Beef patty stacked inside a warm Sunlit Wheat bun with fresh Blaze Tomato.',
+          description: 'Juicy Shadow Beef patty stacked with Spark Cheese on Sunlit Wheat.',
           ingredients: [
-            { pokemonId: 'eevee', count: 2 },
-            { pokemonId: 'gengar', count: 2 },
-            { pokemonId: 'fuecoco', count: 1 }
+            { pokemonId: 'espeon', count: 2 },
+            { pokemonId: 'gengar', count: 1 },
+            { pokemonId: 'pikachu', count: 1 }
           ]
         },
         {
           id: 'teriyaki',
           name: 'Teriyaki Chicken and Rice',
           baseStrength: 1500,
-          description: 'Glazed Thunder Chicken served over fluffy Hydro Rice with a sweet Crisp Apple reduction.',
+          description: 'Glazed Thunder Chicken over Hydro Rice with sweet Crisp Apple.',
           ingredients: [
-            { pokemonId: 'zapdos', count: 2 },
+            { pokemonId: 'zapdos', count: 1 },
             { pokemonId: 'blastoise', count: 2 },
             { pokemonId: 'applin', count: 1 }
           ]
@@ -727,23 +741,22 @@
           id: 'mac_and_cheese',
           name: 'Mac and Cheese',
           baseStrength: 1350,
-          description: 'Hearty Sunlit Wheat pasta baked in velvety Spark Cheese and rich Creamy Milk.',
+          description: 'Warm Sunlit Wheat pasta swirled in Spark Cheese and Creamy Milk.',
           ingredients: [
-            { pokemonId: 'eevee', count: 2 },
-            { pokemonId: 'pikachu', count: 2 },
-            { pokemonId: 'mew', count: 1 }
+            { pokemonId: 'espeon', count: 2 },
+            { pokemonId: 'pikachu', count: 1 },
+            { pokemonId: 'eevee', count: 1 }
           ]
         },
         {
           id: 'waffles',
           name: 'Waffles',
           baseStrength: 1450,
-          description: 'Golden Sunlit Wheat & Mystic Egg waffles whipped with Creamy Milk and caramelized Crisp Apple.',
+          description: 'Golden Sunlit Wheat & Mystic Egg waffles whipped with Creamy Milk.',
           ingredients: [
-            { pokemonId: 'eevee', count: 2 },
-            { pokemonId: 'espeon', count: 1 },
+            { pokemonId: 'espeon', count: 2 },
             { pokemonId: 'mew', count: 1 },
-            { pokemonId: 'applin', count: 1 }
+            { pokemonId: 'eevee', count: 1 }
           ]
         }
       ];
@@ -842,6 +855,44 @@
           gain.connect(this.ctx.destination);
           osc.start(now);
           osc.stop(now + 0.11);
+        }
+
+        playGrassPluck() {
+          if (this.muted) return;
+          this.unlock();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(340, now);
+          osc.frequency.exponentialRampToValueAtTime(510, now + 0.09);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.13);
+        }
+
+        playSnorlaxGiggle() {
+          if (this.muted) return;
+          this.unlock();
+          if (!this.ctx) return;
+          [261.63, 329.63, 392.0].forEach((freq, i) => {
+            const t = this.ctx.currentTime + i * 0.06;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t);
+            gain.gain.setValueAtTime(0.001, t);
+            gain.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.25);
+          });
         }
 
         playServeChime() {
@@ -1040,8 +1091,43 @@
       scene.add(fireLight);
 
       /* ======================================================================
-         8. HIGH-RESOLUTION PROCEDURAL CANVAS TEXTURE FACTORY
+         8. HIGH-RESOLUTION PROCEDURAL CANVAS TEXTURE FACTORY (PLUSH SHADING & AO)
          ====================================================================== */
+      function createPlushShadedTexture(baseHex, highlightHex, shadowHex, subtleFreckles = false) {
+        const c = document.createElement('canvas');
+        c.width = 512;
+        c.height = 512;
+        const ctx = c.getContext('2d');
+
+        // Vertical + Radial plush ambient occlusion shading
+        const vGrad = ctx.createLinearGradient(0, 0, 0, 512);
+        vGrad.addColorStop(0.0, highlightHex);
+        vGrad.addColorStop(0.45, baseHex);
+        vGrad.addColorStop(1.0, shadowHex);
+        ctx.fillStyle = vGrad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const rGrad = ctx.createRadialGradient(256, 175, 40, 256, 256, 260);
+        rGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.22)');
+        rGrad.addColorStop(0.65, 'rgba(255, 255, 255, 0.0)');
+        rGrad.addColorStop(1.0, 'rgba(15, 23, 42, 0.26)');
+        ctx.fillStyle = rGrad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        if (subtleFreckles) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+          for (let i = 0; i < 140; i++) {
+            ctx.beginPath();
+            ctx.arc(Math.random() * 512, Math.random() * 512, 2 + Math.random() * 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.needsUpdate = true;
+        return tex;
+      }
+
       function createMeadowTexture() {
         const c = document.createElement('canvas');
         c.width = 512;
@@ -1142,9 +1228,50 @@
         return tex;
       }
 
+      function createApplinAppleTexture() {
+        const c = document.createElement('canvas');
+        c.width = 512;
+        c.height = 512;
+        const ctx = c.getContext('2d');
+
+        // Glossy crimson-red upper apple skin
+        const redGrad = ctx.createLinearGradient(0, 0, 0, 380);
+        redGrad.addColorStop(0.0, '#f87171');
+        redGrad.addColorStop(0.35, '#dc2626');
+        redGrad.addColorStop(1.0, '#991b1b');
+        ctx.fillStyle = redGrad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Soft glossy highlight band near upper shoulder
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.beginPath();
+        ctx.ellipse(256, 135, 230, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Warm tan/beige zig-zag serrated bottom third (matching reference image)
+        ctx.fillStyle = '#d6a374';
+        ctx.beginPath();
+        ctx.moveTo(0, 512);
+        ctx.lineTo(0, 370);
+        const teeth = 8;
+        const step = 512 / teeth;
+        for (let i = 0; i < teeth; i++) {
+          const xMid = i * step + step * 0.5;
+          const xEnd = (i + 1) * step;
+          ctx.lineTo(xMid, 318);
+          ctx.lineTo(xEnd, 375);
+        }
+        ctx.lineTo(512, 512);
+        ctx.closePath();
+        ctx.fill();
+
+        const tex = new THREE.CanvasTexture(c);
+        tex.needsUpdate = true;
+        return tex;
+      }
+
       /**
-       * High-resolution 512x512 procedural face decal texture (iris, pupil, catchlights,
-       * cheeks, brows, mouth/teeth) mapped onto a curved front face shield.
+       * High-resolution 512x512 procedural face decal texture matched to official Pokémon art styles.
        */
       function createFaceTexture(species, excited = false) {
         const c = document.createElement('canvas');
@@ -1153,54 +1280,85 @@
         const ctx = c.getContext('2d');
         ctx.clearRect(0, 0, 512, 512);
 
-        const drawAnimeEye = (cx, cy, rx, ry, irisTop, irisBot, browAngle = 0) => {
+        const drawAnimeEye = (cx, cy, rx, ry, irisDeep, irisGlow, browAngle = 0, withSclera = false) => {
           if (excited) {
-            // Joyful ^ ^ curved happy eye
             ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 14;
+            ctx.lineWidth = 15;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.arc(cx, cy + ry * 0.25, rx * 0.92, Math.PI * 1.12, Math.PI * 1.88);
+            ctx.arc(cx, cy + ry * 0.25, rx * 0.88, Math.PI * 1.12, Math.PI * 1.88);
             ctx.stroke();
             return;
           }
 
-          // Sclera base
-          ctx.fillStyle = '#ffffff';
+          ctx.save();
           ctx.beginPath();
           ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.clip();
 
-          // Gradient Iris
-          const grad = ctx.createLinearGradient(cx, cy - ry, cx, cy + ry);
-          grad.addColorStop(0, irisTop);
-          grad.addColorStop(1, irisBot);
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.ellipse(cx, cy, rx * 0.84, ry * 0.88, 0, 0, Math.PI * 2);
-          ctx.fill();
+          if (withSclera) {
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+            const irisX = cx + (cx < 256 ? rx * 0.14 : -rx * 0.14);
+            const grad = ctx.createLinearGradient(irisX, cy - ry, irisX, cy + ry);
+            grad.addColorStop(0.0, irisDeep);
+            grad.addColorStop(1.0, irisGlow);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.ellipse(irisX, cy + ry * 0.05, rx * 0.66, ry * 0.86, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Crisp Dark Pupil
-          ctx.fillStyle = '#0f172a';
-          ctx.beginPath();
-          ctx.ellipse(cx, cy + ry * 0.05, rx * 0.44, ry * 0.5, 0, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.ellipse(irisX, cy + ry * 0.04, rx * 0.34, ry * 0.50, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Upper-left Glossy Catchlight + Lower-right Sparkle
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.ellipse(cx - rx * 0.28, cy - ry * 0.3, rx * 0.26, ry * 0.24, -0.3, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(irisX - rx * 0.16, cy - ry * 0.28, rx * 0.24, ry * 0.22, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            const grad = ctx.createLinearGradient(cx, cy - ry, cx, cy + ry);
+            grad.addColorStop(0.0, '#120d0a');
+            grad.addColorStop(0.45, irisDeep);
+            grad.addColorStop(0.82, irisGlow);
+            grad.addColorStop(1.0, irisDeep);
+            ctx.fillStyle = grad;
+            ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
 
-          ctx.beginPath();
-          ctx.arc(cx + rx * 0.25, cy + ry * 0.28, rx * 0.12, 0, Math.PI * 2);
-          ctx.fill();
+            ctx.fillStyle = irisGlow;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + ry * 0.46, rx * 0.78, ry * 0.44, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Crisp Upper Eyelash Outline
-          ctx.strokeStyle = '#1e293b';
-          ctx.lineWidth = 7;
+            ctx.fillStyle = '#0c0a09';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - ry * 0.04, rx * 0.56, ry * 0.62, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx - rx * 0.24, cy - ry * 0.32, rx * 0.34, ry * 0.28, -0.22, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.52)';
+            ctx.beginPath();
+            ctx.arc(cx + rx * 0.26, cy + ry * 0.34, rx * 0.11, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.restore();
+
+          ctx.strokeStyle = '#18120e';
+          ctx.lineWidth = 6;
           ctx.beginPath();
           ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.lineWidth = 10;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, rx, ry, 0, Math.PI * 1.12, Math.PI * 1.88);
           ctx.stroke();
 
           if (browAngle !== 0) {
@@ -1208,8 +1366,8 @@
             ctx.lineWidth = 11;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(cx - rx * 1.05, cy - ry * 1.15 - browAngle * 14);
-            ctx.lineTo(cx + rx * 1.05, cy - ry * 1.15 + browAngle * 14);
+            ctx.moveTo(cx - rx * 1.02, cy - ry * 1.08 - browAngle * 14);
+            ctx.lineTo(cx + rx * 1.02, cy - ry * 1.08 + browAngle * 14);
             ctx.stroke();
           }
         };
@@ -1232,121 +1390,88 @@
           ctx.lineWidth = 7;
           ctx.stroke();
 
-          // Cute pink tongue inside
           ctx.fillStyle = '#fda4af';
           ctx.beginPath();
           ctx.ellipse(cx, cy + h * 0.55, w * 0.55, h * 0.35, 0, 0, Math.PI * 2);
           ctx.fill();
         };
 
-        if (species === 'snorlax') {
-          if (!excited) {
-            // Peaceful closed sleeping curved eyes
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 14;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.arc(175, 225, 42, 0.12 * Math.PI, 0.88 * Math.PI);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(337, 225, 42, 0.12 * Math.PI, 0.88 * Math.PI);
-            ctx.stroke();
-
-            // Peaceful smile + two lower white fangs
-            ctx.lineWidth = 11;
-            ctx.beginPath();
-            ctx.arc(256, 315, 58, 0.1 * Math.PI, 0.9 * Math.PI);
-            ctx.stroke();
-
-            ctx.fillStyle = '#ffffff';
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 5;
-            [216, 296].forEach(fx => {
-              ctx.beginPath();
-              ctx.moveTo(fx - 12, 344);
-              ctx.lineTo(fx, 316);
-              ctx.lineTo(fx + 12, 344);
-              ctx.closePath();
-              ctx.fill();
-              ctx.stroke();
-            });
-          } else {
-            drawAnimeEye(175, 235, 40, 40, '#1e293b', '#1e293b');
-            drawAnimeEye(337, 235, 40, 40, '#1e293b', '#1e293b');
-            drawRosyCheeks(120, 392, 285, 38, 22);
-            drawJoyfulMouth(256, 315, 64, 54);
-          }
-
-        } else if (species === 'pikachu') {
-          drawAnimeEye(178, 235, 34, 38, '#334155', '#0f172a');
-          drawAnimeEye(334, 235, 34, 38, '#334155', '#0f172a');
-          // Electric Red Cheeks
-          drawRosyCheeks(115, 397, 300, 38, 34, '#ef4444');
-          // Tiny nose
+        if (species === 'pikachu') {
+          // Classic round dark eyes with large white upper-left catchlights & bright red cheek circles
+          drawAnimeEye(172, 232, 36, 38, '#1e293b', '#334155');
+          drawAnimeEye(340, 232, 36, 38, '#1e293b', '#334155');
+          drawRosyCheeks(114, 398, 298, 38, 36, '#ef4444');
           ctx.fillStyle = '#1e293b';
           ctx.beginPath();
-          ctx.arc(256, 275, 8, 0, Math.PI * 2);
+          ctx.arc(256, 272, 7, 0, Math.PI * 2);
           ctx.fill();
           if (!excited) {
             ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 9;
+            ctx.lineWidth = 8.5;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.arc(236, 302, 20, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.arc(236, 300, 20, 0.1 * Math.PI, 0.9 * Math.PI);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(276, 302, 20, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.arc(276, 300, 20, 0.1 * Math.PI, 0.9 * Math.PI);
             ctx.stroke();
           } else {
-            drawJoyfulMouth(256, 304, 42, 36);
+            drawJoyfulMouth(256, 302, 42, 36);
           }
 
         } else if (species === 'eevee') {
-          drawAnimeEye(180, 238, 36, 42, '#92400e', '#451a03');
-          drawAnimeEye(332, 238, 36, 42, '#92400e', '#451a03');
+          // Large, soulful warm chestnut-brown oval eyes matching official Eevee artwork
+          drawAnimeEye(172, 234, 44, 54, '#451a03', '#b45309');
+          drawAnimeEye(340, 234, 44, 54, '#451a03', '#b45309');
           ctx.fillStyle = '#292524';
           ctx.beginPath();
-          ctx.arc(256, 282, 8, 0, Math.PI * 2);
+          ctx.ellipse(256, 286, 9, 6, 0, 0, Math.PI * 2);
           ctx.fill();
           if (!excited) {
             ctx.strokeStyle = '#451a03';
-            ctx.lineWidth = 9;
+            ctx.lineWidth = 8.5;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.arc(238, 306, 18, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.arc(238, 310, 18, 0.1 * Math.PI, 0.9 * Math.PI);
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(274, 306, 18, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.arc(274, 310, 18, 0.1 * Math.PI, 0.9 * Math.PI);
             ctx.stroke();
           } else {
-            drawRosyCheeks(128, 384, 294, 30, 18);
-            drawJoyfulMouth(256, 308, 38, 32);
+            drawRosyCheeks(124, 388, 298, 30, 18);
+            drawJoyfulMouth(256, 312, 38, 32);
           }
 
         } else if (species === 'espeon') {
-          drawAnimeEye(182, 245, 36, 40, '#a855f7', '#581c87');
-          drawAnimeEye(330, 245, 36, 40, '#a855f7', '#581c87');
+          // Sleek almond violet eyes with white outer corners (matching Espeon reference)
+          drawAnimeEye(176, 244, 44, 36, '#4c1d95', '#8b5cf6', 0.15, true);
+          drawAnimeEye(336, 244, 44, 36, '#4c1d95', '#8b5cf6', -0.15, true);
+          ctx.fillStyle = '#4c1d95';
+          ctx.beginPath();
+          ctx.arc(256, 286, 5.5, 0, Math.PI * 2);
+          ctx.fill();
           if (!excited) {
-            ctx.strokeStyle = '#581c87';
-            ctx.lineWidth = 8;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.arc(256, 304, 24, 0.15 * Math.PI, 0.85 * Math.PI);
-            ctx.stroke();
-          } else {
-            drawRosyCheeks(132, 380, 295, 28, 17);
-            drawJoyfulMouth(256, 308, 36, 30);
-          }
-
-        } else if (species === 'mew') {
-          drawAnimeEye(182, 242, 36, 44, '#38bdf8', '#0369a1');
-          drawAnimeEye(330, 242, 36, 44, '#38bdf8', '#0369a1');
-          if (!excited) {
-            ctx.strokeStyle = '#9d174d';
-            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#4c1d95';
+            ctx.lineWidth = 7.5;
             ctx.lineCap = 'round';
             ctx.beginPath();
             ctx.arc(256, 310, 22, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.stroke();
+          } else {
+            drawRosyCheeks(132, 380, 295, 28, 17);
+            drawJoyfulMouth(256, 310, 36, 30);
+          }
+
+        } else if (species === 'mew') {
+          // Large expressive sky-blue eyes with white sclera (matching Mew reference)
+          drawAnimeEye(176, 238, 44, 54, '#1d4ed8', '#38bdf8', 0, true);
+          drawAnimeEye(336, 238, 44, 54, '#1d4ed8', '#38bdf8', 0, true);
+          if (!excited) {
+            ctx.strokeStyle = '#9d174d';
+            ctx.lineWidth = 7.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(256, 310, 20, 0.15 * Math.PI, 0.85 * Math.PI);
             ctx.stroke();
           } else {
             drawRosyCheeks(130, 382, 296, 30, 18);
@@ -1354,102 +1479,54 @@
           }
 
         } else if (species === 'gengar') {
-          drawAnimeEye(178, 220, 38, 36, '#f87171', '#b91c1c', 0.55);
-          drawAnimeEye(334, 220, 38, 36, '#f87171', '#b91c1c', -0.55);
+          // Glowing crimson-red slanted eyes & iconic wide white blocky-toothed crescent grin
+          drawAnimeEye(176, 214, 42, 36, '#dc2626', '#f87171', 0.62);
+          drawAnimeEye(336, 214, 42, 36, '#dc2626', '#f87171', -0.62);
           if (!excited) {
-            // Mischievous wide white crescent grin with teeth lines
             ctx.fillStyle = '#ffffff';
             ctx.strokeStyle = '#1e1b4b';
             ctx.lineWidth = 8;
             ctx.beginPath();
-            ctx.arc(256, 285, 118, 0.08 * Math.PI, 0.92 * Math.PI, false);
-            ctx.quadraticCurveTo(256, 345, 142, 314);
+            ctx.arc(256, 280, 122, 0.08 * Math.PI, 0.92 * Math.PI, false);
+            ctx.quadraticCurveTo(256, 342, 138, 310);
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
 
-            // Vertical teeth dividers
             ctx.lineWidth = 6;
-            [185, 220, 256, 292, 327].forEach(tx => {
+            [184, 220, 256, 292, 328].forEach(tx => {
               ctx.beginPath();
-              ctx.moveTo(tx, 324);
-              ctx.lineTo(tx, 392);
+              ctx.moveTo(tx, 320);
+              ctx.lineTo(tx, 394);
               ctx.stroke();
             });
           } else {
             drawRosyCheeks(122, 390, 275, 34, 20);
-            drawJoyfulMouth(256, 305, 76, 56);
+            drawJoyfulMouth(256, 305, 78, 56);
           }
 
         } else if (species === 'blastoise') {
-          drawAnimeEye(184, 232, 32, 34, '#60a5fa', '#1e3a8a', 0.45);
-          drawAnimeEye(328, 232, 32, 34, '#60a5fa', '#1e3a8a', -0.45);
+          // Sharp brown eyes with determined brow ridges (matching Blastoise reference)
+          drawAnimeEye(178, 228, 38, 34, '#451a03', '#92400e', 0.52, true);
+          drawAnimeEye(334, 228, 38, 34, '#451a03', '#92400e', -0.52, true);
           if (!excited) {
             ctx.strokeStyle = '#1e3a8a';
             ctx.lineWidth = 9;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.arc(256, 305, 42, 0.1 * Math.PI, 0.9 * Math.PI);
+            ctx.arc(256, 304, 44, 0.1 * Math.PI, 0.9 * Math.PI);
             ctx.stroke();
           } else {
             drawRosyCheeks(132, 380, 285, 28, 18);
             drawJoyfulMouth(256, 304, 46, 36);
           }
 
-        } else if (species === 'applin') {
-          drawAnimeEye(185, 230, 34, 38, '#4d7c0f', '#1a2e05');
-          drawAnimeEye(327, 230, 34, 38, '#4d7c0f', '#1a2e05');
-          if (!excited) {
-            ctx.strokeStyle = '#1a2e05';
-            ctx.lineWidth = 8;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.arc(256, 295, 20, 0.15 * Math.PI, 0.85 * Math.PI);
-            ctx.stroke();
-          } else {
-            drawRosyCheeks(138, 374, 278, 26, 16);
-            drawJoyfulMouth(256, 295, 32, 26);
-          }
-
         } else if (species === 'zapdos') {
-          drawAnimeEye(182, 232, 32, 34, '#facc15', '#1e293b', 0.6);
-          drawAnimeEye(330, 232, 32, 34, '#facc15', '#1e293b', -0.6);
+          // Fierce sharp eyes with dark eye contour (matching Zapdos reference)
+          drawAnimeEye(180, 232, 36, 32, '#1e293b', '#64748b', 0.68, true);
+          drawAnimeEye(332, 232, 36, 32, '#1e293b', '#64748b', -0.68, true);
           if (excited) {
             drawRosyCheeks(135, 377, 280, 26, 16);
-          }
-
-        } else if (species === 'fuecoco') {
-          drawAnimeEye(174, 210, 30, 34, '#334155', '#0f172a');
-          drawAnimeEye(338, 210, 30, 34, '#334155', '#0f172a');
-          // Nostrils
-          ctx.fillStyle = '#7f1d1d';
-          ctx.beginPath();
-          ctx.arc(236, 255, 6, 0, Math.PI * 2);
-          ctx.arc(276, 255, 6, 0, Math.PI * 2);
-          ctx.fill();
-
-          if (!excited) {
-            ctx.strokeStyle = '#7f1d1d';
-            ctx.lineWidth = 9;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.arc(256, 292, 54, 0.1 * Math.PI, 0.9 * Math.PI);
-            ctx.stroke();
-
-            // Cute single white tooth peeking out
-            ctx.fillStyle = '#ffffff';
-            ctx.strokeStyle = '#7f1d1d';
-            ctx.lineWidth = 5;
-            ctx.beginPath();
-            ctx.moveTo(240, 344);
-            ctx.lineTo(272, 344);
-            ctx.lineTo(256, 376);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            drawRosyCheeks(122, 390, 265, 30, 18);
-            drawJoyfulMouth(256, 300, 54, 44);
           }
         }
 
@@ -1495,6 +1572,157 @@
         const pineMat2 = new THREE.MeshStandardMaterial({ color: 0x38a169, roughness: 0.8 });
         const bushMat = new THREE.MeshStandardMaterial({ color: 0x48bb78, roughness: 0.85 });
         const rockMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.9, flatShading: true });
+        const mossyRockMat = new THREE.MeshStandardMaterial({ color: 0x7c9082, roughness: 0.92, flatShading: true });
+
+        // Helper to build a detailed 3D Pokéball prop
+        const createPokeballProp = (topColorHex = 0xef4444) => {
+          const ball = new THREE.Group();
+          const r = 0.27;
+          const topShell = new THREE.Mesh(
+            new THREE.SphereGeometry(r, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.47),
+            new THREE.MeshStandardMaterial({ color: topColorHex, roughness: 0.28, metalness: 0.1 })
+          );
+          const botShell = new THREE.Mesh(
+            new THREE.SphereGeometry(r, 20, 14, 0, Math.PI * 2, Math.PI * 0.53, Math.PI * 0.47),
+            new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.32, metalness: 0.05 })
+          );
+          const centerBand = new THREE.Mesh(
+            new THREE.SphereGeometry(r * 0.985, 20, 12),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
+          );
+          const buttonOuter = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.075, 0.075, 0.05, 16),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 })
+          );
+          buttonOuter.rotation.x = Math.PI / 2;
+          buttonOuter.position.z = r * 0.96;
+
+          const buttonInner = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.048, 0.048, 0.055, 16),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 })
+          );
+          buttonInner.rotation.x = Math.PI / 2;
+          buttonInner.position.z = r * 0.975;
+
+          ball.add(centerBand, topShell, botShell, buttonOuter, buttonInner);
+          ball.traverse(c => {
+            if (c.isMesh) {
+              c.castShadow = true;
+              c.receiveShadow = true;
+            }
+          });
+          return ball;
+        };
+
+        // Helper to build cute spotted red-and-white toadstool mushrooms
+        const addMushroomCluster = (mx, mz, scale = 1.0) => {
+          const cluster = new THREE.Group();
+          cluster.position.set(mx, 0, mz);
+          cluster.scale.setScalar(scale);
+
+          const stemMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.85 });
+          const capMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.55 });
+          const spotMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+
+          [
+            { x: 0, z: 0, h: 0.28, r: 0.22 },
+            { x: 0.24, z: 0.14, h: 0.20, r: 0.16 }
+          ].forEach(m => {
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(m.r * 0.34, m.r * 0.45, m.h, 10), stemMat);
+            stem.position.set(m.x, m.h * 0.5, m.z);
+            stem.castShadow = true;
+
+            const cap = new THREE.Mesh(
+              new THREE.SphereGeometry(m.r, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.56),
+              capMat
+            );
+            cap.position.set(m.x, m.h * 0.92, m.z);
+            cap.castShadow = true;
+
+            cluster.add(stem, cap);
+
+            [
+              [0, m.r * 0.88, 0],
+              [m.r * 0.58, m.r * 0.52, m.r * 0.42],
+              [-m.r * 0.55, m.r * 0.50, -m.r * 0.35]
+            ].forEach(([sx, sy, sz]) => {
+              const spot = new THREE.Mesh(new THREE.SphereGeometry(m.r * 0.22, 8, 6), spotMat);
+              spot.position.set(m.x + sx, m.h * 0.92 + sy, m.z + sz);
+              cluster.add(spot);
+            });
+          });
+
+          envGroup.add(cluster);
+        };
+
+        // 1. Hero Detail: Classic Pokéball resting next to a smooth rock right beside Snorlax's blanket!
+        const heroRock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.42, 1), mossyRockMat);
+        heroRock.position.set(4.02, 0.24, -2.18);
+        heroRock.scale.set(1.25, 0.72, 1.05);
+        heroRock.castShadow = true;
+        heroRock.receiveShadow = true;
+        envGroup.add(heroRock);
+
+        const heroPokeball = createPokeballProp(0xef4444);
+        heroPokeball.position.set(3.24, 0.26, -1.80);
+        heroPokeball.rotation.set(0.22, -0.45, -0.18);
+        envGroup.add(heroPokeball);
+
+        // 2. Second Pokéball (Great Ball) nestled next to a boulder on the left clearing edge
+        const leftBoulder = new THREE.Mesh(new THREE.DodecahedronGeometry(0.62, 1), rockMat);
+        leftBoulder.position.set(-7.75, 0.36, -3.25);
+        leftBoulder.scale.set(1.3, 0.8, 1.1);
+        leftBoulder.castShadow = true;
+        leftBoulder.receiveShadow = true;
+        envGroup.add(leftBoulder);
+
+        const leftPokeball = createPokeballProp(0x2563eb);
+        leftPokeball.position.set(-6.55, 0.26, -2.72);
+        leftPokeball.rotation.set(0.18, 0.65, 0.22);
+        envGroup.add(leftPokeball);
+
+        // 3. Cute Mushroom Clusters & Stepping Stones near the campfire pot
+        addMushroomCluster(-7.8, -2.5, 1.1);
+        addMushroomCluster(7.5, 2.4, 1.0);
+        addMushroomCluster(-5.4, -6.8, 0.95);
+
+        [
+          [-1.55, 2.05, 0.26],
+          [-1.95, 2.22, 0.22],
+          [-3.15, 2.65, 0.24]
+        ].forEach(([sx, sz, sr]) => {
+          const stepStone = new THREE.Mesh(new THREE.CylinderGeometry(sr, sr * 1.15, 0.06, 9), rockMat);
+          stepStone.position.set(sx, 0.03, sz);
+          stepStone.receiveShadow = true;
+          envGroup.add(stepStone);
+        });
+
+        // 4. Cozy Wooden Trail Signpost with Warm Hanging Lantern on the right edge
+        const signGroup = new THREE.Group();
+        signGroup.position.set(7.4, 0, -3.9);
+        signGroup.rotation.y = -0.55;
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.65, 8), trunkMat);
+        post.position.y = 0.82;
+        post.castShadow = true;
+        const board = new THREE.Mesh(
+          new THREE.BoxGeometry(0.95, 0.42, 0.09),
+          new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.82 })
+        );
+        board.position.set(0, 1.32, 0.05);
+        board.rotation.z = 0.05;
+        board.castShadow = true;
+
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.45, 6), trunkMat);
+        arm.rotation.z = Math.PI / 2;
+        arm.position.set(-0.22, 1.58, 0);
+
+        const lantern = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.10, 0.12, 0.24, 8),
+          new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xf59e0b, emissiveIntensity: 0.65 })
+        );
+        lantern.position.set(-0.38, 1.40, 0);
+        signGroup.add(post, board, arm, lantern);
+        envGroup.add(signGroup);
 
         const treeCount = 18;
         for (let i = 0; i < treeCount; i++) {
@@ -1694,8 +1922,17 @@
         return new THREE.MeshStandardMaterial({ color, roughness, metalness });
       }
 
+      function shadedMat(baseHex, highlightHex, shadowHex, roughness = 0.68, speckles = false) {
+        return new THREE.MeshStandardMaterial({
+          map: createPlushShadedTexture(baseHex, highlightHex, shadowHex, speckles),
+          roughness,
+          metalness: 0.03
+        });
+      }
+
       /**
        * Attaches dual high-res curved decal face shields (Normal vs Excited) onto a head mesh.
+       * SphereGeometry with phi centered at Math.PI * 0.5 already faces +Z (front of the head).
        */
       function attachCurvedFaceDecals(parent, species, radius, pos = [0, 0, 0], phiLen = 1.45, thetaLen = 1.25) {
         const normalTex = createFaceTexture(species, false);
@@ -1713,17 +1950,27 @@
 
         const normalShield = new THREE.Mesh(
           geo,
-          new THREE.MeshBasicMaterial({ map: normalTex, transparent: true, depthWrite: false })
+          new THREE.MeshBasicMaterial({
+            map: normalTex,
+            transparent: true,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -2
+          })
         );
         normalShield.position.set(pos[0], pos[1], pos[2]);
-        normalShield.rotation.y = -Math.PI / 2;
 
         const excitedShield = new THREE.Mesh(
           geo,
-          new THREE.MeshBasicMaterial({ map: excitedTex, transparent: true, depthWrite: false })
+          new THREE.MeshBasicMaterial({
+            map: excitedTex,
+            transparent: true,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -2
+          })
         );
         excitedShield.position.set(pos[0], pos[1], pos[2]);
-        excitedShield.rotation.y = -Math.PI / 2;
         excitedShield.visible = false;
 
         parent.add(normalShield, excitedShield);
@@ -1741,52 +1988,77 @@
       }
 
       /* ----------------------------------------------------------------------
-         SNORLAX 3D MODEL (LOUNGING IN CENTER OF CLEARING)
+         SNORLAX 3D MODEL (MATCHING REFERENCE POSE, PILLOW, SHADING & FACE)
          ---------------------------------------------------------------------- */
       function buildSnorlax3D() {
         const root = new THREE.Group();
         root.position.set(0, 0, -0.55);
 
-        const tealMat = mat(0x266575, 0.72);
-        const creamMat = mat(0xfef3c7, 0.78);
-        const pawMat = mat(0xd97706, 0.76);
-        const whiteMat = mat(0xffffff, 0.3);
+        // Rich plush shaded textures matching the reference Snorlax palette
+        const tealMat = shadedMat('#165b75', '#287d9c', '#0b3546', 0.72, true);
+        const bellyCreamMat = shadedMat('#f5dec3', '#fdf3e7', '#cfa87e', 0.76, false);
+        const faceCreamMat = shadedMat('#f5dec3', '#fdf3e7', '#cfa87e', 0.74, false);
+        const pillowMat = shadedMat('#fef9c3', '#fffff0', '#e5d48b', 0.85, false);
+        const pawMat = shadedMat('#b45309', '#d97706', '#78350f', 0.78, false);
+        const whiteMat = mat(0xffffff, 0.25);
+        const darkLineMat = mat(0x1e293b, 0.45);
+        const blushMat = new THREE.MeshStandardMaterial({
+          color: 0xff7597,
+          emissive: 0xf43f5e,
+          emissiveIntensity: 0.24,
+          roughness: 0.5
+        });
 
-        // Main Round Lounging Body
+        // Soft Buttery-Cream Plush Pillow resting flat on the ground under Snorlax's Head
+        const pillow = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.28, 1.45), pillowMat);
+        pillow.position.set(0, 0.14, -1.92);
+        pillow.castShadow = true;
+        pillow.receiveShadow = true;
+        // Rounded pillow bolsters on left & right ends
+        [-1.25, 1.25].forEach(px => {
+          const bolster = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.44, 14), pillowMat);
+          bolster.rotation.x = Math.PI / 2;
+          bolster.position.set(px, 0.14, -1.92);
+          bolster.castShadow = true;
+          root.add(bolster);
+        });
+        root.add(pillow);
+
+        // Main Round Lounging Body lying comfortably on back
         const bodyGroup = new THREE.Group();
-        bodyGroup.position.set(0, 1.06, 0.1);
+        bodyGroup.position.set(0, 0.86, 0.36);
         root.add(bodyGroup);
 
-        const torso = new THREE.Mesh(new THREE.SphereGeometry(1.78, 28, 24), tealMat);
-        torso.scale.set(1.08, 0.76, 1.15);
+        const torso = new THREE.Mesh(new THREE.SphereGeometry(1.74, 30, 24), tealMat);
+        torso.scale.set(1.08, 0.58, 1.05);
         torso.castShadow = true;
         torso.receiveShadow = true;
         bodyGroup.add(torso);
 
-        // Cream Belly Patch (Breathing animation)
-        const belly = new THREE.Mesh(new THREE.SphereGeometry(1.44, 24, 20), creamMat);
-        belly.position.set(0, 0.38, 0.12);
-        belly.scale.set(1.02, 0.66, 1.06);
+        // Broad Shaded Peachy-Cream Belly Pad covering upper front torso
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(1.46, 32, 24), bellyCreamMat);
+        belly.position.set(0, 0.52, 0.08);
+        belly.scale.set(1.02, 0.58, 1.02);
+        belly.castShadow = true;
         belly.receiveShadow = true;
         bodyGroup.add(belly);
 
-        // Thick Articulated Arms with 5 White Claws Each
+        // Relaxed Outstretched Arms with Tiny White Claws at Tips
         const armPivots = [];
         [-1, 1].forEach(side => {
           const armPivot = new THREE.Group();
-          armPivot.position.set(side * 1.55, -0.05, -0.15);
-          armPivot.rotation.y = side * -0.35;
+          armPivot.position.set(side * 1.56, -0.04, -0.26);
+          armPivot.rotation.y = side * -0.22;
 
-          const arm = new THREE.Mesh(new THREE.SphereGeometry(0.64, 18, 14), tealMat);
-          arm.scale.set(1.42, 0.64, 0.78);
-          arm.position.set(side * 0.42, -0.1, 0);
+          const arm = new THREE.Mesh(new THREE.SphereGeometry(0.62, 18, 14), tealMat);
+          arm.scale.set(1.48, 0.58, 0.76);
+          arm.position.set(side * 0.46, -0.06, 0);
           arm.castShadow = true;
           armPivot.add(arm);
 
-          // 5 Tiny White Claws on Hand Tip
           for (let c = -2; c <= 2; c++) {
-            const claw = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.13, 6), whiteMat);
-            claw.position.set(side * 1.32, -0.1, c * 0.11);
+            const claw = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.14, 7), whiteMat);
+            claw.position.set(side * 1.38, -0.06, c * 0.10);
             claw.rotation.z = side * -Math.PI / 2;
             armPivot.add(claw);
           }
@@ -1795,60 +2067,149 @@
           armPivots.push(armPivot);
         });
 
-        // Propped-up Rounded Head
+        // Head Resting Flat on the Ground/Pillow (facing upward toward the sky/camera)
         const headGroup = new THREE.Group();
-        headGroup.position.set(0, 1.5, -1.42);
-        headGroup.rotation.x = -0.32;
+        headGroup.position.set(0, 0.90, -1.78);
+        headGroup.rotation.x = -1.32;
         root.add(headGroup);
 
-        const headSphere = new THREE.Mesh(new THREE.SphereGeometry(1.06, 26, 22), tealMat);
-        headSphere.scale.set(1.08, 0.96, 0.95);
+        const headSphere = new THREE.Mesh(new THREE.SphereGeometry(1.04, 28, 24), tealMat);
+        headSphere.scale.set(1.10, 0.94, 0.88);
         headSphere.castShadow = true;
         headGroup.add(headSphere);
 
-        // Cream Face Mask
-        const faceMask = new THREE.Mesh(new THREE.SphereGeometry(0.88, 24, 20), creamMat);
-        faceMask.position.set(0, -0.04, 0.31);
-        faceMask.scale.set(1.04, 0.9, 0.78);
-        headGroup.add(faceMask);
+        // Twin Overlapping Peachy-Cream Face Lobes (Creates Snorlax's signature teal widow's peak!)
+        [-1, 1].forEach(side => {
+          const faceLobe = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 20), faceCreamMat);
+          faceLobe.position.set(side * 0.25, 0.03, 0.46);
+          faceLobe.scale.set(0.96, 0.98, 0.72);
+          faceLobe.receiveShadow = true;
+          headGroup.add(faceLobe);
+        });
 
-        // High-Res Curved Face Decal on Snorlax's Cream Face Mask
-        const faceRig = attachCurvedFaceDecals(faceMask, 'snorlax', 0.905, [0, 0, 0], 1.55, 1.35);
+        // Lower Chin/Cheek Cream Blend so the face is a unified heart shape
+        const lowerFacePad = new THREE.Mesh(new THREE.SphereGeometry(0.76, 24, 20), faceCreamMat);
+        lowerFacePad.position.set(0, -0.14, 0.45);
+        lowerFacePad.scale.set(1.06, 0.76, 0.72);
+        lowerFacePad.receiveShadow = true;
+        headGroup.add(lowerFacePad);
+
+        // Sculpted 3D Facial Features Group (Positioned cleanly on front surface z = 1.02)
+        const facialFeatures = new THREE.Group();
+        facialFeatures.position.set(0, -0.01, 1.02);
+        headGroup.add(facialFeatures);
+
+        // Sleeping Horizontal Slightly-Curved Eyes (—  —) without eyebrows
+        const sleepEyesGroup = new THREE.Group();
+        const happyEyesGroup = new THREE.Group();
+        happyEyesGroup.visible = false;
+
+        [-1, 1].forEach(side => {
+          // Crisp Sleeping Eye Line (—  —)
+          const sleepEye = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.028, 0.028, 0.28, 10),
+            darkLineMat
+          );
+          sleepEye.rotation.z = Math.PI / 2 + side * -0.07;
+          sleepEye.rotation.y = side * 0.22;
+          sleepEye.position.set(side * 0.30, 0.16, -0.03);
+          sleepEyesGroup.add(sleepEye);
+
+          // Happy Curved Eye Arc (^ ^) when eating/celebrating
+          const happyArc = new THREE.Mesh(
+            new THREE.TorusGeometry(0.15, 0.030, 10, 18, Math.PI * 0.85),
+            darkLineMat
+          );
+          happyArc.position.set(side * 0.30, 0.13, -0.03);
+          happyArc.rotation.z = Math.PI * 0.075;
+          happyArc.rotation.y = side * 0.22;
+          happyEyesGroup.add(happyArc);
+        });
+
+        facialFeatures.add(sleepEyesGroup, happyEyesGroup);
+
+        // Rosy 3D Cheek Blushes
+        const cheeks = [];
+        [-1, 1].forEach(side => {
+          const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 12), blushMat);
+          cheek.scale.set(1.25, 0.78, 0.35);
+          cheek.position.set(side * 0.46, -0.02, -0.10);
+          cheek.rotation.y = side * 0.42;
+          facialFeatures.add(cheek);
+          cheeks.push(cheek);
+        });
+
+        // Resting Peaceful Smile (curved smile clearly visible on Snorlax's upward-facing head)
+        const restingMouthGroup = new THREE.Group();
+        const smileCurve = new THREE.Mesh(
+          new THREE.TorusGeometry(0.22, 0.030, 10, 20, Math.PI * 0.72),
+          darkLineMat
+        );
+        smileCurve.rotation.z = Math.PI * 1.14;
+        smileCurve.position.set(0, -0.04, 0.03);
+        restingMouthGroup.add(smileCurve);
+        facialFeatures.add(restingMouthGroup);
+
+        // Open Joyful Cheering/Eating Mouth + Two Pointed Lower Fangs
+        const openMouthGroup = new THREE.Group();
+        openMouthGroup.visible = false;
+
+        const mouthCavity = new THREE.Mesh(
+          new THREE.CircleGeometry(0.22, 20, Math.PI, Math.PI),
+          mat(0xf43f5e, 0.4)
+        );
+        mouthCavity.position.set(0, -0.09, 0.02);
+        openMouthGroup.add(mouthCavity);
+
+        const mouthRim = new THREE.Mesh(
+          new THREE.TorusGeometry(0.22, 0.024, 10, 20, Math.PI),
+          darkLineMat
+        );
+        mouthRim.position.set(0, -0.09, 0.025);
+        mouthRim.rotation.z = Math.PI;
+        openMouthGroup.add(mouthRim);
+
+        [-0.12, 0.12].forEach(fx => {
+          const fang = new THREE.Mesh(new THREE.ConeGeometry(0.046, 0.12, 8), whiteMat);
+          fang.position.set(fx, -0.23, 0.01);
+          openMouthGroup.add(fang);
+        });
+        facialFeatures.add(openMouthGroup);
 
         // Pointed Teal Ears
         [-1, 1].forEach(side => {
-          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.66, 12), tealMat);
-          ear.position.set(side * 0.68, 0.88, -0.05);
-          ear.rotation.z = side * -0.38;
+          const ear = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.64, 12), tealMat);
+          ear.position.set(side * 0.72, 0.82, -0.02);
+          ear.rotation.z = side * -0.34;
           ear.castShadow = true;
           headGroup.add(ear);
         });
 
-        // Chubby Legs & Cream Feet with Tan Footpads & 3 White Claws Each
+        // Chubby Legs & Shaded Peachy-Cream Feet with Brown Paw Pads & 3 White Claws Each
         [-1, 1].forEach(side => {
-          const leg = new THREE.Mesh(new THREE.SphereGeometry(0.68, 16, 14), tealMat);
-          leg.position.set(side * 0.9, 0.62, 1.28);
+          const leg = new THREE.Mesh(new THREE.SphereGeometry(0.66, 16, 14), tealMat);
+          leg.position.set(side * 0.88, 0.56, 1.32);
           leg.castShadow = true;
           root.add(leg);
 
           const footGroup = new THREE.Group();
-          footGroup.position.set(side * 0.94, 0.74, 1.78);
+          footGroup.position.set(side * 0.92, 0.68, 1.82);
           footGroup.rotation.x = -0.35;
           footGroup.rotation.y = side * 0.18;
 
-          const foot = new THREE.Mesh(new THREE.SphereGeometry(0.6, 18, 16), creamMat);
-          foot.scale.set(0.95, 1.15, 0.55);
+          const foot = new THREE.Mesh(new THREE.SphereGeometry(0.58, 18, 16), faceCreamMat);
+          foot.scale.set(0.95, 1.14, 0.55);
           foot.castShadow = true;
           footGroup.add(foot);
 
-          const pad = new THREE.Mesh(new THREE.SphereGeometry(0.29, 14, 12), pawMat);
+          const pad = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 12), pawMat);
           pad.position.set(0, -0.05, 0.25);
           pad.scale.set(1, 1.1, 0.35);
           footGroup.add(pad);
 
           [-0.22, 0, 0.22].forEach(cx => {
-            const claw = new THREE.Mesh(new THREE.ConeGeometry(0.068, 0.19, 7), whiteMat);
-            claw.position.set(cx, 0.66, 0.04);
+            const claw = new THREE.Mesh(new THREE.ConeGeometry(0.066, 0.18, 7), whiteMat);
+            claw.position.set(cx, 0.64, 0.04);
             footGroup.add(claw);
           });
 
@@ -1856,7 +2217,7 @@
         });
 
         const collider = new THREE.Mesh(
-          new THREE.BoxGeometry(4.3, 2.6, 4.5),
+          new THREE.BoxGeometry(4.4, 2.7, 4.6),
           new THREE.MeshBasicMaterial({ visible: false })
         );
         collider.position.set(0, 1.2, 0);
@@ -1871,18 +2232,48 @@
           belly,
           headGroup,
           armPivots,
-          faceRig
+          sleepEyesGroup,
+          happyEyesGroup,
+          restingMouthGroup,
+          openMouthGroup,
+          cheeks,
+          jiggleTimer: 0
         };
       }
 
       const snorlax3D = buildSnorlax3D();
 
+      function setSnorlaxHappy(isHappy) {
+        snorlax3D.sleepEyesGroup.visible = !isHappy;
+        snorlax3D.happyEyesGroup.visible = isHappy;
+        snorlax3D.restingMouthGroup.visible = !isHappy;
+        snorlax3D.openMouthGroup.visible = isHappy;
+        snorlax3D.cheeks.forEach(c => {
+          c.scale.set(isHappy ? 1.45 : 1.2, isHappy ? 0.95 : 0.78, 0.35);
+        });
+      }
+
       /* ----------------------------------------------------------------------
-         9 HIGH-FIDELITY SCULPTED 3D POKÉMON MODELS
+         9 HIGH-FIDELITY SCULPTED 3D POKÉMON MODELS (SHADED + HELPER RING)
          ---------------------------------------------------------------------- */
       function buildPokemon3D(id) {
         const root = new THREE.Group();
         root.add(createShadowPad(0.65));
+
+        // Golden Helper Ring (Pulses when toddler taps a missing ingredient in Cooking Sheet!)
+        const helperRing = new THREE.Mesh(
+          new THREE.RingGeometry(0.75, 1.05, 32),
+          new THREE.MeshBasicMaterial({
+            color: 0xfacc15,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.92
+          })
+        );
+        helperRing.rotation.x = -Math.PI / 2;
+        helperRing.position.y = 0.04;
+        helperRing.visible = false;
+        root.add(helperRing);
 
         const bodyPivot = new THREE.Group();
         root.add(bodyPivot);
@@ -1900,68 +2291,87 @@
         let isFloating = false;
 
         if (id === 'pikachu') {
-          const yellow = mat(0xfacc15, 0.55);
+          const yellow = shadedMat('#facc15', '#fef08a', '#eab308', 0.52);
           const black = mat(0x1e293b, 0.5);
           const brown = mat(0x78350f, 0.7);
 
-          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.47, 22, 18), yellow);
-          torso.scale.set(0.95, 1.16, 0.88);
+          // Seamless plump pear-shaped body (torso + chubby lower head)
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.49, 24, 20), yellow);
+          torso.scale.set(0.96, 1.18, 0.90);
           torso.position.y = 0.56;
           torso.castShadow = true;
           bodyPivot.add(torso);
 
-          // Curved Brown Back Stripes
           [0.48, 0.68].forEach(sy => {
             const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.065, 0.1), brown);
-            stripe.position.set(0, sy, -0.39);
+            stripe.position.set(0, sy, -0.40);
             bodyPivot.add(stripe);
           });
 
-          const head = new THREE.Mesh(new THREE.SphereGeometry(0.43, 24, 20), yellow);
-          head.position.set(0, 1.13, 0.04);
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.44, 24, 20), yellow);
+          head.scale.set(1.04, 0.98, 0.96);
+          head.position.set(0, 1.08, 0.03);
           head.castShadow = true;
           bodyPivot.add(head);
 
-          faceRig = attachCurvedFaceDecals(head, 'pikachu', 0.438);
+          faceRig = attachCurvedFaceDecals(head, 'pikachu', 0.448);
 
-          // Long Black-Tipped Ears that Bounce
+          // Long angled yellow ears with crisp black tips
           [-1, 1].forEach(side => {
             const earGroup = new THREE.Group();
-            earGroup.position.set(side * 0.25, 1.44, 0);
-            earGroup.rotation.z = side * -0.45;
-            const earBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.11, 0.42, 12), yellow);
-            earBase.position.y = 0.21;
+            earGroup.position.set(side * 0.25, 1.40, 0);
+            earGroup.rotation.z = side * -0.52;
+            const earBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.115, 0.44, 12), yellow);
+            earBase.scale.set(1, 1, 0.55);
+            earBase.position.y = 0.22;
             earBase.castShadow = true;
             const earTip = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.24, 12), black);
-            earTip.position.y = 0.52;
+            earTip.scale.set(1, 1, 0.55);
+            earTip.position.y = 0.54;
             earGroup.add(earBase, earTip);
             bodyPivot.add(earGroup);
             if (side === -1) earLeftPivot = earGroup;
             else earRightPivot = earGroup;
 
             const arm = new THREE.Mesh(new THREE.SphereGeometry(0.115, 12, 10), yellow);
-            arm.scale.set(0.8, 1.35, 0.85);
-            arm.position.set(side * 0.42, 0.68, 0.16);
-            arm.rotation.z = side * -0.35;
+            arm.scale.set(0.8, 1.38, 0.85);
+            arm.position.set(side * 0.36, 0.66, 0.24);
+            arm.rotation.z = side * 0.28;
             bodyPivot.add(arm);
           });
 
-          // Multi-Segment Lightning Bolt Tail with Brown Base
+          // Flat Lightning-Bolt Tail with Brown Base (matching reference image)
           tailPivot = new THREE.Group();
-          tailPivot.position.set(0, 0.44, -0.38);
-          const segBase = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.26, 0.14), brown);
-          segBase.position.set(0, 0.12, -0.08);
-          segBase.rotation.x = -0.5;
-          const seg1 = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.28, 0.18), yellow);
-          seg1.position.set(0, 0.30, -0.16);
-          seg1.rotation.x = 0.48;
-          const seg2 = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.32, 0.22), yellow);
-          seg2.position.set(0, 0.50, -0.18);
-          seg2.rotation.x = -0.48;
-          const seg3 = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.44, 0.28), yellow);
-          seg3.position.set(0, 0.76, -0.28);
-          seg3.rotation.x = 0.35;
-          tailPivot.add(segBase, seg1, seg2, seg3);
+          tailPivot.position.set(0, 0.42, -0.38);
+
+          const buildTailBolt = (pts, matRef) => {
+            const shape = new THREE.Shape();
+            shape.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1]);
+            shape.closePath();
+            const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false });
+            geo.translate(0, 0, -0.02);
+            const mesh = new THREE.Mesh(geo, matRef);
+            mesh.rotation.y = Math.PI / 2;
+            mesh.castShadow = true;
+            return mesh;
+          };
+
+          const tailBaseBrown = buildTailBolt(
+            [[0, 0], [0.18, 0.10], [0.12, 0.24], [-0.04, 0.14]],
+            brown
+          );
+          const tailMainYellow = buildTailBolt(
+            [
+              [0.12, 0.24], [-0.04, 0.14],
+              [0.24, 0.36], [0.08, 0.46],
+              [0.44, 0.64], [0.22, 0.88],
+              [0.64, 1.12], [0.76, 0.72],
+              [0.42, 0.56], [0.54, 0.44]
+            ],
+            yellow
+          );
+          tailPivot.add(tailBaseBrown, tailMainYellow);
           bodyPivot.add(tailPivot);
 
           leftLeg = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), yellow);
@@ -1972,9 +2382,9 @@
           bodyPivot.add(leftLeg, rightLeg);
 
         } else if (id === 'eevee') {
-          const russet = mat(0xb45309, 0.65);
-          const cream = mat(0xfef3c7, 0.75);
-          const darkBrown = mat(0x451a03, 0.7);
+          const russet = shadedMat('#c0824b', '#d99b66', '#855227', 0.65);
+          const cream = shadedMat('#f5ebd6', '#fffbeb', '#d8c5a3', 0.72);
+          const darkBrown = mat(0x3b1e08, 0.7);
 
           const torso = new THREE.Mesh(new THREE.SphereGeometry(0.42, 20, 18), russet);
           torso.scale.set(0.92, 1.06, 1.18);
@@ -1982,37 +2392,45 @@
           torso.castShadow = true;
           bodyPivot.add(torso);
 
-          // Multi-Lobed Fluffy Cream Neck Ruff
-          for (let i = 0; i < 10; i++) {
-            const a = (i / 10) * Math.PI * 2;
-            const puff = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 12), cream);
-            puff.scale.set(1.0, 1.15, 1.0);
-            puff.position.set(Math.cos(a) * 0.34, 0.81, Math.sin(a) * 0.34);
+          // Fluffy cream neck ruff collar with layered tufts
+          for (let i = 0; i < 12; i++) {
+            const a = (i / 12) * Math.PI * 2;
+            const puff = new THREE.Mesh(new THREE.ConeGeometry(0.20, 0.34, 10), cream);
+            puff.position.set(Math.cos(a) * 0.36, 0.80, Math.sin(a) * 0.36);
+            puff.rotation.z = -Math.cos(a) * 0.65;
+            puff.rotation.x = Math.sin(a) * 0.65;
             puff.castShadow = true;
             bodyPivot.add(puff);
           }
 
           const head = new THREE.Mesh(new THREE.SphereGeometry(0.40, 24, 20), russet);
-          head.position.set(0, 1.13, 0.08);
+          head.position.set(0, 1.14, 0.08);
           head.castShadow = true;
           bodyPivot.add(head);
 
+          // Cute spiky fur tuft on top of Eevee's forehead (matching reference image)
+          [-0.08, 0, 0.08].forEach((tx, idx) => {
+            const crownTuft = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.16 + (idx === 1 ? 0.04 : 0), 7), russet);
+            crownTuft.position.set(tx, 1.53, 0.10);
+            crownTuft.rotation.z = -tx * 2.2;
+            bodyPivot.add(crownTuft);
+          });
+
           faceRig = attachCurvedFaceDecals(head, 'eevee', 0.408);
 
-          // Large Rabbit-Fox Ears with Dark Brown Interiors
           [-1, 1].forEach(side => {
             const earGroup = new THREE.Group();
             earGroup.position.set(side * 0.26, 1.44, 0.04);
-            earGroup.rotation.z = side * -0.42;
+            earGroup.rotation.z = side * -0.45;
 
             const ear = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), russet);
-            ear.scale.set(0.85, 2.35, 0.36);
-            ear.position.y = 0.26;
+            ear.scale.set(0.85, 2.45, 0.34);
+            ear.position.y = 0.28;
             ear.castShadow = true;
 
-            const inner = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 10), darkBrown);
-            inner.scale.set(0.75, 1.9, 0.25);
-            inner.position.set(0, 0.24, 0.045);
+            const inner = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), darkBrown);
+            inner.scale.set(0.76, 2.0, 0.24);
+            inner.position.set(0, 0.26, 0.045);
 
             earGroup.add(ear, inner);
             bodyPivot.add(earGroup);
@@ -2020,15 +2438,14 @@
             else earRightPivot = earGroup;
           });
 
-          // Large Bushy Brown Tail with Jagged Cream Tip
           tailPivot = new THREE.Group();
           tailPivot.position.set(0, 0.45, -0.45);
-          const tailBase = new THREE.Mesh(new THREE.SphereGeometry(0.30, 16, 14), russet);
-          tailBase.scale.set(0.92, 1.38, 1.12);
-          tailBase.position.set(0, 0.24, -0.18);
+          const tailBase = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 14), russet);
+          tailBase.scale.set(0.95, 1.42, 1.15);
+          tailBase.position.set(0, 0.26, -0.18);
           tailBase.rotation.x = -0.5;
-          const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.42, 12), cream);
-          tailTip.position.set(0, 0.52, -0.34);
+          const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.46, 12), cream);
+          tailTip.position.set(0, 0.55, -0.35);
           tailTip.rotation.x = -0.45;
           tailPivot.add(tailBase, tailTip);
           bodyPivot.add(tailPivot);
@@ -2041,68 +2458,74 @@
           bodyPivot.add(leftLeg, rightLeg, backLeftLeg, backRightLeg);
 
         } else if (id === 'espeon') {
-          const lavender = mat(0xd8b4fe, 0.48);
-          const darkViolet = mat(0x4c1d95, 0.6);
-          const ruby = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 0.4, roughness: 0.15 });
+          // Pale dusty-lilac feline palette matching reference image
+          const lilac = shadedMat('#cbb2ce', '#e6d5e8', '#9c7ea0', 0.48);
+          const slateInner = mat(0x2c3e50, 0.6);
+          const ruby = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 0.45, roughness: 0.15 });
 
-          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.38, 22, 18), lavender);
-          torso.scale.set(0.84, 0.98, 1.36);
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.37, 22, 18), lilac);
+          torso.scale.set(0.84, 0.98, 1.38);
           torso.position.y = 0.54;
           torso.castShadow = true;
           bodyPivot.add(torso);
 
-          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.36, 14), lavender);
-          neck.position.set(0, 0.84, 0.18);
-          neck.rotation.x = 0.2;
+          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.21, 0.38, 14), lilac);
+          neck.position.set(0, 0.85, 0.18);
+          neck.rotation.x = 0.18;
           bodyPivot.add(neck);
 
-          const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 24, 20), lavender);
-          head.position.set(0, 1.12, 0.22);
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.37, 24, 20), lilac);
+          head.scale.set(1.06, 0.96, 0.98);
+          head.position.set(0, 1.13, 0.22);
           head.castShadow = true;
           bodyPivot.add(head);
 
-          faceRig = attachCurvedFaceDecals(head, 'espeon', 0.388);
+          faceRig = attachCurvedFaceDecals(head, 'espeon', 0.382);
 
-          // Glowing Ruby Forehead Gem
-          const gem = new THREE.Mesh(new THREE.SphereGeometry(0.058, 14, 12), ruby);
-          gem.position.set(0, 0.16, 0.355);
+          const gem = new THREE.Mesh(new THREE.SphereGeometry(0.056, 14, 12), ruby);
+          gem.position.set(0, 0.15, 0.372);
           head.add(gem);
 
-          // Large Pointed Ears with Dark Purple Inner Cavities & Cheek Fur Tufts
           [-1, 1].forEach(side => {
             const earGroup = new THREE.Group();
-            earGroup.position.set(side * 0.27, 1.44, 0.18);
-            earGroup.rotation.z = side * -0.48;
+            earGroup.position.set(side * 0.27, 1.43, 0.18);
+            earGroup.rotation.z = side * -0.52;
 
-            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.64, 12), lavender);
-            ear.scale.set(1, 1, 0.42);
-            ear.position.y = 0.25;
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.68, 12), lilac);
+            ear.scale.set(1, 1, 0.38);
+            ear.position.y = 0.27;
             ear.castShadow = true;
 
-            const inner = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.44, 10), darkViolet);
-            inner.scale.set(1, 1, 0.35);
-            inner.position.set(0, 0.2, 0.04);
+            const inner = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.46, 10), slateInner);
+            inner.scale.set(1, 1, 0.32);
+            inner.position.set(0, 0.22, 0.038);
 
             earGroup.add(ear, inner);
             bodyPivot.add(earGroup);
 
-            const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.24, 8), lavender);
-            tuft.position.set(side * 0.39, -0.05, 0.06);
-            tuft.rotation.z = side * -1.32;
-            head.add(tuft);
+            // Signature flaring cheek fur tufts on both sides of Espeon's face
+            const tuftMain = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.32, 8), lilac);
+            tuftMain.scale.set(1, 1, 0.4);
+            tuftMain.position.set(side * 0.42, -0.04, 0.06);
+            tuftMain.rotation.z = side * -1.42;
+
+            const tuftSub = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.20, 8), lilac);
+            tuftSub.scale.set(1, 1, 0.4);
+            tuftSub.position.set(side * 0.38, -0.11, 0.06);
+            tuftSub.rotation.z = side * -1.78;
+            head.add(tuftMain, tuftSub);
           });
 
-          // Smooth CatmullRomCurve3 Swaying Forked Tail
           tailPivot = new THREE.Group();
           tailPivot.position.set(0, 0.56, -0.48);
           const stemCurve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0.18, -0.22),
-            new THREE.Vector3(0, 0.42, -0.34)
+            new THREE.Vector3(0, 0.20, -0.22),
+            new THREE.Vector3(0, 0.45, -0.34)
           ]);
-          const tailStem = new THREE.Mesh(new THREE.TubeGeometry(stemCurve, 12, 0.042, 8, false), lavender);
-          const forkL = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.32, 8), lavender);
-          forkL.position.set(-0.09, 0.56, -0.38);
+          const tailStem = new THREE.Mesh(new THREE.TubeGeometry(stemCurve, 12, 0.038, 8, false), lilac);
+          const forkL = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.34, 8), lilac);
+          forkL.position.set(-0.09, 0.60, -0.38);
           forkL.rotation.set(-0.35, 0, 0.35);
           const forkR = forkL.clone();
           forkR.position.x = 0.09;
@@ -2110,7 +2533,7 @@
           tailPivot.add(tailStem, forkL, forkR);
           bodyPivot.add(tailPivot);
 
-          leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.062, 0.44, 10), lavender);
+          leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.062, 0.44, 10), lilac);
           leftLeg.position.set(-0.18, 0.22, 0.24);
           rightLeg = leftLeg.clone(); rightLeg.position.x = 0.18;
           backLeftLeg = leftLeg.clone(); backLeftLeg.position.z = -0.22;
@@ -2118,9 +2541,15 @@
           bodyPivot.add(leftLeg, rightLeg, backLeftLeg, backRightLeg);
 
         } else if (id === 'fuecoco') {
-          const red = mat(0xef4444, 0.55);
-          const white = mat(0xffffff, 0.6);
-          const yellow = mat(0xfacc15, 0.5);
+          // Warm terracotta-red crocodile palette matching official Fuecoco artwork
+          const red = shadedMat('#d94e34', '#f27861', '#992d1b', 0.55);
+          const faceCream = shadedMat('#f7f1e1', '#ffffff', '#dfd4bc', 0.58);
+          const white = shadedMat('#ffffff', '#ffffff', '#e2e8f0', 0.5);
+          const yellowHairMat = shadedMat('#fde047', '#fef9c3', '#eab308', 0.45);
+          const charcoalMat = mat(0x3f444e, 0.55);
+          const nostrilMat = mat(0x1e293b, 0.5);
+          const eyeSlateMat = mat(0x475569, 0.20);
+          const eyeDarkMat = mat(0x111827, 0.15);
 
           const torso = new THREE.Mesh(new THREE.SphereGeometry(0.49, 22, 18), red);
           torso.scale.set(0.96, 1.14, 0.96);
@@ -2128,40 +2557,167 @@
           torso.castShadow = true;
           bodyPivot.add(torso);
 
-          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.38, 18, 14), white);
-          belly.position.set(0, 0.48, 0.24);
-          belly.scale.set(0.92, 1.0, 0.7);
+          const belly = new THREE.Mesh(new THREE.SphereGeometry(0.39, 18, 14), faceCream);
+          belly.position.set(0, 0.46, 0.22);
+          belly.scale.set(0.94, 0.98, 0.72);
           bodyPivot.add(belly);
 
-          [-0.085, 0.085].forEach(sx => {
-            const sq = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.115, 0.04), yellow);
-            sq.position.set(sx, 0.55, 0.50);
-            bodyPivot.add(sq);
-          });
+          // Signature Yellow Belly Square Patch
+          const chestSquare = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.21, 0.05), yellowHairMat);
+          chestSquare.position.set(0, 0.54, 0.49);
+          chestSquare.rotation.x = -0.12;
+          bodyPivot.add(chestSquare);
 
-          // Sculpted Rounded-Box Croc Head
-          const head = new THREE.Mesh(new THREE.SphereGeometry(0.44, 24, 20), red);
-          head.scale.set(1.06, 0.92, 1.08);
-          head.position.set(0, 1.16, 0.06);
+          // Tall Shaded Red Cranium
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 20), red);
+          head.scale.set(1.06, 1.02, 0.96);
+          head.position.set(0, 1.24, -0.02);
           head.castShadow = true;
           bodyPivot.add(head);
 
-          // White Face Plate
-          const faceMask = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 16), white);
-          faceMask.position.set(0, -0.04, 0.18);
-          faceMask.scale.set(0.98, 0.78, 0.85);
-          head.add(faceMask);
+          // Single Continuous Shaded Cream Face & Snout Mask
+          const continuousFaceGroup = new THREE.Group();
+          bodyPivot.add(continuousFaceGroup);
 
-          faceRig = attachCurvedFaceDecals(head, 'fuecoco', 0.452);
+          // 1. High Twin Upper Eye-Mask Arches (z front surface at ~0.415)
+          [-1, 1].forEach(side => {
+            const eyePatch = new THREE.Mesh(new THREE.SphereGeometry(0.28, 22, 20), faceCream);
+            eyePatch.scale.set(0.96, 1.38, 0.66);
+            eyePatch.position.set(side * 0.165, 1.37, 0.225);
+            eyePatch.rotation.y = side * 0.18;
+            eyePatch.rotation.x = -0.14;
+            eyePatch.receiveShadow = true;
+            continuousFaceGroup.add(eyePatch);
+          });
 
-          // Two Yellow Spark Tufts on Top of Head
-          const tuft1 = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.28, 8), yellow);
-          tuft1.position.set(-0.07, 1.58, 0.04);
-          tuft1.rotation.z = 0.22;
-          const tuft2 = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.25, 8), yellow);
-          tuft2.position.set(0.07, 1.56, 0.04);
-          tuft2.rotation.z = -0.22;
-          bodyPivot.add(tuft1, tuft2);
+          // 2. Broad Mid-Face Cream Dome connecting upper eye arches into the snout
+          const midFaceBridge = new THREE.Mesh(new THREE.SphereGeometry(0.39, 24, 20), faceCream);
+          midFaceBridge.scale.set(1.05, 1.06, 0.82);
+          midFaceBridge.position.set(0, 1.23, 0.24);
+          midFaceBridge.receiveShadow = true;
+          continuousFaceGroup.add(midFaceBridge);
+
+          // 3. Seamless All-Cream Rounded Crocodile Snout
+          const snoutGroup = new THREE.Group();
+          snoutGroup.position.set(0, 1.03, 0.34);
+          bodyPivot.add(snoutGroup);
+
+          const upperMuzzle = new THREE.Mesh(new THREE.SphereGeometry(0.35, 24, 20), faceCream);
+          upperMuzzle.scale.set(1.06, 0.66, 1.18);
+          upperMuzzle.position.set(0, 0.04, 0.05);
+          upperMuzzle.castShadow = true;
+          upperMuzzle.receiveShadow = true;
+          snoutGroup.add(upperMuzzle);
+
+          // Two Dark Triangular Nostrils on Front Tip of the Cream Snout
+          [-0.088, 0.088].forEach(nx => {
+            const nostril = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.038, 3), nostrilMat);
+            nostril.rotation.x = Math.PI * 0.38;
+            nostril.position.set(nx, 0.11, 0.425);
+            snoutGroup.add(nostril);
+          });
+
+          // Shaded Cream Lower Jaw + Signature Upper Side Fang Teeth
+          const lowerJaw = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), faceCream);
+          lowerJaw.scale.set(1.0, 0.44, 1.04);
+          lowerJaw.position.set(0, -0.09, 0.03);
+          lowerJaw.castShadow = true;
+          snoutGroup.add(lowerJaw);
+
+          const mouthLine = new THREE.Mesh(
+            new THREE.TorusGeometry(0.26, 0.015, 8, 18, Math.PI * 0.86),
+            nostrilMat
+          );
+          mouthLine.rotation.x = Math.PI * 0.48;
+          mouthLine.rotation.z = Math.PI * 0.07;
+          mouthLine.position.set(0, -0.02, 0.16);
+          snoutGroup.add(mouthLine);
+
+          [-0.14, 0.14].forEach(tx => {
+            const fang = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.085, 6), white);
+            fang.rotation.x = Math.PI;
+            fang.position.set(tx, -0.055, 0.34);
+            snoutGroup.add(fang);
+          });
+
+          // Prominent Tall Slate-and-White Oval Eyes positioned clearly IN FRONT of the cream face mask (z = 0.445)
+          const normalEyesGroup = new THREE.Group();
+          const happyEyesGroup = new THREE.Group();
+          happyEyesGroup.visible = false;
+
+          [-1, 1].forEach(side => {
+            const eyeAnchor = new THREE.Group();
+            eyeAnchor.position.set(side * 0.185, 1.38, 0.448);
+            eyeAnchor.rotation.y = side * 0.25;
+            eyeAnchor.rotation.x = -0.22;
+
+            // Bold dark contour
+            const eyeOutline = new THREE.Mesh(new THREE.SphereGeometry(0.092, 18, 16), eyeDarkMat);
+            eyeOutline.scale.set(0.68, 1.34, 0.36);
+            eyeAnchor.add(eyeOutline);
+
+            // Slate-charcoal tall iris
+            const iris = new THREE.Mesh(new THREE.SphereGeometry(0.080, 18, 16), eyeSlateMat);
+            iris.scale.set(0.64, 1.26, 0.40);
+            iris.position.z = 0.008;
+            eyeAnchor.add(iris);
+
+            // Crisp vertical white inner oval (matching reference)
+            const innerWhite = new THREE.Mesh(new THREE.SphereGeometry(0.044, 14, 12), white);
+            innerWhite.scale.set(0.56, 1.18, 0.46);
+            innerWhite.position.set(0, 0.004, 0.018);
+            eyeAnchor.add(innerWhite);
+
+            normalEyesGroup.add(eyeAnchor);
+
+            // Happy ^ ^ curved eye arc for eating/celebration
+            const happyArc = new THREE.Mesh(
+              new THREE.TorusGeometry(0.076, 0.020, 8, 14, Math.PI * 0.85),
+              eyeDarkMat
+            );
+            happyArc.position.set(side * 0.185, 1.38, 0.455);
+            happyArc.rotation.z = Math.PI * 0.075;
+            happyArc.rotation.y = side * 0.25;
+            happyEyesGroup.add(happyArc);
+          });
+          bodyPivot.add(normalEyesGroup, happyEyesGroup);
+
+          faceRig = {
+            normalFace: normalEyesGroup,
+            excitedFace: happyEyesGroup
+          };
+
+          // Longer, Flared Yellow Flame-Hair Plumes emerging from the top crown dip
+          const buildHairBlade = (height, baseW, topW, curveX) => {
+            const shape = new THREE.Shape();
+            shape.moveTo(-baseW * 0.5, 0);
+            shape.quadraticCurveTo(curveX * 0.45 - baseW * 0.6, height * 0.5, curveX - topW * 0.5, height);
+            shape.lineTo(curveX + topW * 0.5, height * 0.94);
+            shape.quadraticCurveTo(curveX * 0.45 + baseW * 0.6, height * 0.48, baseW * 0.5, 0);
+            shape.closePath();
+
+            const geo = new THREE.ExtrudeGeometry(shape, {
+              depth: 0.036,
+              bevelEnabled: true,
+              bevelThickness: 0.012,
+              bevelSize: 0.012,
+              bevelSegments: 2
+            });
+            geo.center();
+            return new THREE.Mesh(geo, yellowHairMat);
+          };
+
+          const tuftMain = buildHairBlade(0.60, 0.07, 0.24, -0.10);
+          tuftMain.position.set(-0.06, 1.92, 0.03);
+          tuftMain.rotation.z = 0.22;
+          tuftMain.castShadow = true;
+
+          const tuftSide = buildHairBlade(0.40, 0.06, 0.17, 0.07);
+          tuftSide.position.set(0.11, 1.82, 0.03);
+          tuftSide.rotation.z = -0.34;
+          tuftSide.castShadow = true;
+
+          bodyPivot.add(tuftMain, tuftSide);
 
           [-1, 1].forEach(side => {
             const arm = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), red);
@@ -2173,69 +2729,132 @@
 
           tailPivot = new THREE.Group();
           tailPivot.position.set(0, 0.35, -0.45);
-          const tail = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.52, 12), red);
+          const tail = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.54, 12), red);
           tail.rotation.x = -Math.PI / 2.2;
           tail.position.z = -0.22;
-          tailPivot.add(tail);
+          // Yellow square patch on top of Fuecoco's tail (matching reference)
+          const tailStripe = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.16), yellowHairMat);
+          tailStripe.position.set(0, 0.10, -0.22);
+          tailStripe.rotation.x = 0.35;
+          tailPivot.add(tail, tailStripe);
           bodyPivot.add(tailPivot);
 
-          leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.26, 10), red);
-          leftLeg.position.set(-0.22, 0.13, 0.08);
-          rightLeg = leftLeg.clone(); rightLeg.position.x = 0.22;
-          bodyPivot.add(leftLeg, rightLeg);
+          // Chunky legs with two dark charcoal-gray claws on each foot (matching reference)
+          [-1, 1].forEach(side => {
+            const legGroup = new THREE.Group();
+            legGroup.position.set(side * 0.22, 0.13, 0.08);
+            const legCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.125, 0.26, 10), red);
+            legGroup.add(legCyl);
+
+            [-0.055, 0.055].forEach(cx => {
+              const toe = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 7), charcoalMat);
+              toe.rotation.x = Math.PI * 0.35;
+              toe.position.set(cx, -0.07, 0.13);
+              legGroup.add(toe);
+            });
+
+            bodyPivot.add(legGroup);
+            if (side === -1) leftLeg = legGroup;
+            else rightLeg = legGroup;
+          });
 
         } else if (id === 'applin') {
-          const appleRed = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.28, metalness: 0.06 });
-          const leafGreen = mat(0x4ade80, 0.5);
-          const wyrmLime = mat(0xa3e635, 0.5);
-          const stemBrown = mat(0x78350f, 0.8);
+          // Glossy crimson apple with tan zig-zag bottom + two upright lime-green eyestalks (matching reference)
+          const appleMat = new THREE.MeshStandardMaterial({
+            map: createApplinAppleTexture(),
+            roughness: 0.28,
+            metalness: 0.05
+          });
+          const stalkLime = shadedMat('#b4d465', '#d9f99d', '#65a30d', 0.48);
+          const wyrmTailGreen = shadedMat('#65a30d', '#84cc16', '#3f6212', 0.55);
+          const eyeBlack = mat(0x111827, 0.2);
+          const eyeAmber = mat(0xfacc15, 0.3);
+          const eyeWhite = mat(0xffffff, 0.1);
 
-          // Sculpted Apple LatheGeometry Profile with Authentic Top & Bottom Indentations
           const applePts = [
-            new THREE.Vector2(0.0, 0.14),
-            new THREE.Vector2(0.16, 0.06),
-            new THREE.Vector2(0.38, 0.14),
-            new THREE.Vector2(0.50, 0.42),
-            new THREE.Vector2(0.46, 0.74),
+            new THREE.Vector2(0.0, 0.12),
+            new THREE.Vector2(0.18, 0.04),
+            new THREE.Vector2(0.42, 0.14),
+            new THREE.Vector2(0.52, 0.44),
+            new THREE.Vector2(0.47, 0.76),
             new THREE.Vector2(0.24, 0.90),
             new THREE.Vector2(0.08, 0.84),
             new THREE.Vector2(0.0, 0.82)
           ];
-          const apple = new THREE.Mesh(new THREE.LatheGeometry(applePts, 28), appleRed);
+          const apple = new THREE.Mesh(new THREE.LatheGeometry(applePts, 32), appleMat);
           apple.castShadow = true;
+          apple.receiveShadow = true;
           bodyPivot.add(apple);
 
-          const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.26, 10), stemBrown);
-          stem.position.set(0, 0.94, 0);
-          bodyPivot.add(stem);
-
-          // Cute Yellow-Green Wyrm Eyestalks Peeking Out of Top
-          const headAnchor = new THREE.Group();
-          headAnchor.position.set(0, 0.96, 0.14);
-          bodyPivot.add(headAnchor);
+          // Two tall upright lime-green leaf eyestalks forming a V-shape on top
+          const normalEyesGroup = new THREE.Group();
+          const happyEyesGroup = new THREE.Group();
+          happyEyesGroup.visible = false;
 
           [-1, 1].forEach(side => {
-            const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.19, 14, 12), leafGreen);
-            leaf.scale.set(1.15, 0.74, 0.44);
-            leaf.position.set(side * 0.22, 0.06, 0.04);
-            leaf.rotation.z = side * -0.35;
-            leaf.castShadow = true;
-            headAnchor.add(leaf);
+            const stalkGroup = new THREE.Group();
+            stalkGroup.position.set(side * 0.14, 0.86, 0.04);
+            stalkGroup.rotation.z = side * -0.34;
+
+            const stalk = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 14), stalkLime);
+            stalk.scale.set(0.92, 1.95, 0.34);
+            stalk.position.y = 0.24;
+            stalk.castShadow = true;
+            stalkGroup.add(stalk);
+
+            // Vertical dark-ringed amber & white eye on the front of each eyestalk
+            const eyeOuter = new THREE.Mesh(new THREE.SphereGeometry(0.056, 12, 10), eyeBlack);
+            eyeOuter.scale.set(0.66, 1.35, 0.35);
+            eyeOuter.position.set(0, 0.23, 0.052);
+
+            const eyeRing = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 10), eyeAmber);
+            eyeRing.scale.set(0.64, 1.30, 0.40);
+            eyeRing.position.set(0, 0.23, 0.058);
+
+            const eyePupil = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), eyeWhite);
+            eyePupil.position.set(0, 0.235, 0.066);
+
+            const eyeWrapper = new THREE.Group();
+            eyeWrapper.add(eyeOuter, eyeRing, eyePupil);
+            stalkGroup.add(eyeWrapper);
+            normalEyesGroup.add(eyeWrapper);
+
+            const happyArc = new THREE.Mesh(
+              new THREE.TorusGeometry(0.052, 0.015, 8, 12, Math.PI * 0.85),
+              eyeBlack
+            );
+            happyArc.position.set(0, 0.23, 0.062);
+            happyArc.rotation.z = Math.PI * 0.075;
+            stalkGroup.add(happyArc);
+            happyEyesGroup.add(happyArc);
+
+            bodyPivot.add(stalkGroup);
           });
 
-          faceRig = attachCurvedFaceDecals(headAnchor, 'applin', 0.26, [0, 0.04, 0.04]);
+          faceRig = {
+            normalFace: normalEyesGroup,
+            excitedFace: happyEyesGroup
+          };
 
-          // Curled Green Tail Poking Out the Back
+          // Cute green wyrm tail with two tiny black antennae peeking out the back right
           tailPivot = new THREE.Group();
-          tailPivot.position.set(0, 0.24, -0.44);
-          const wyrmTail = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.42, 10), wyrmLime);
-          wyrmTail.rotation.x = -1.1;
-          wyrmTail.position.set(0.06, 0.08, -0.16);
+          tailPivot.position.set(0.28, 0.16, -0.34);
+          const wyrmTail = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.42, 10), wyrmTailGreen);
+          wyrmTail.rotation.set(-0.9, 0.4, -0.5);
+          wyrmTail.position.set(0.14, 0.10, -0.12);
           tailPivot.add(wyrmTail);
+
+          [-0.04, 0.04].forEach(ax => {
+            const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 6), eyeBlack);
+            ant.position.set(0.24 + ax, 0.24, -0.22);
+            ant.rotation.z = ax * -6;
+            tailPivot.add(ant);
+          });
           bodyPivot.add(tailPivot);
 
         } else if (id === 'gengar') {
-          const violet = mat(0x6366f1, 0.58);
+          // Dusty twilight-purple round ghost palette matching reference image
+          const violet = shadedMat('#6b5b8c', '#8e7db3', '#43365e', 0.58);
 
           const body = new THREE.Mesh(new THREE.SphereGeometry(0.60, 26, 22), violet);
           body.scale.set(1.06, 1.02, 0.96);
@@ -2245,11 +2864,18 @@
 
           faceRig = attachCurvedFaceDecals(body, 'gengar', 0.612, [0, 0.02, 0]);
 
-          // Large Pointed Ear-Horns & Clawed Arms
+          // Spiky fur tufts between Gengar's ears
+          [-0.12, 0, 0.12].forEach((sx, idx) => {
+            const crownSpike = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22 + (idx === 1 ? 0.05 : 0), 7), violet);
+            crownSpike.position.set(sx, 1.32, 0.02);
+            crownSpike.rotation.z = -sx * 1.8;
+            bodyPivot.add(crownSpike);
+          });
+
           [-1, 1].forEach(side => {
-            const horn = new THREE.Mesh(new THREE.ConeGeometry(0.21, 0.58, 10), violet);
-            horn.position.set(side * 0.38, 1.28, 0);
-            horn.rotation.z = side * -0.42;
+            const horn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.62, 10), violet);
+            horn.position.set(side * 0.40, 1.30, 0);
+            horn.rotation.z = side * -0.45;
             horn.castShadow = true;
             bodyPivot.add(horn);
 
@@ -2260,7 +2886,6 @@
             bodyPivot.add(arm);
           });
 
-          // Dorsal Spikes Down Back
           [1.02, 0.78, 0.52].forEach((sy, idx) => {
             const spike = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.30, 8), violet);
             spike.position.set(0, sy, -0.54 + idx * 0.04);
@@ -2274,152 +2899,203 @@
           bodyPivot.add(leftLeg, rightLeg);
 
         } else if (id === 'blastoise') {
-          const navyBlue = mat(0x2563eb, 0.55);
+          // Sky-cerulean blue skin, tan plastron/jaw, earthy brown shell & twin white cannons (matching reference)
+          const skyBlue = shadedMat('#5b9bd5', '#85bce8', '#366899', 0.55);
           const shellMat = new THREE.MeshStandardMaterial({ map: createShellTexture(), roughness: 0.65 });
-          const cream = mat(0xfef3c7, 0.7);
-          const silver = mat(0x94a3b8, 0.25, 0.78);
+          const tanBelly = shadedMat('#d8c39e', '#efe2c8', '#b0986f', 0.7);
+          const cannonWhite = shadedMat('#f8fafc', '#ffffff', '#cbd5e1', 0.3);
+          const steelBase = mat(0x94a3b8, 0.3, 0.6);
           const darkBore = mat(0x0f172a, 0.9);
+          const whiteClaw = mat(0xffffff, 0.3);
 
-          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.55, 22, 18), cream);
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.55, 22, 18), tanBelly);
           torso.scale.set(1.05, 1.05, 0.92);
           torso.position.y = 0.62;
           torso.castShadow = true;
           bodyPivot.add(torso);
 
-          // Detailed Hexagonal-Patterned Brown Shell with White Rim
           const shell = new THREE.Mesh(new THREE.SphereGeometry(0.59, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.65), shellMat);
           shell.rotation.x = -Math.PI / 2;
           shell.position.set(0, 0.64, -0.08);
           shell.castShadow = true;
           bodyPivot.add(shell);
 
-          const rim = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.075, 10, 24), mat(0xffffff));
+          const rim = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.08, 10, 24), cannonWhite);
           rim.position.set(0, 0.64, -0.06);
           bodyPivot.add(rim);
 
-          // Twin Metallic Silver-Grey Hydro Cannons
           [-1, 1].forEach(side => {
             const cannonGroup = new THREE.Group();
-            cannonGroup.position.set(side * 0.34, 1.18, -0.14);
+            cannonGroup.position.set(side * 0.35, 1.18, -0.12);
             cannonGroup.rotation.x = 0.48;
-            cannonGroup.rotation.z = side * -0.18;
+            cannonGroup.rotation.z = side * -0.22;
 
-            const cannon = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.105, 0.46, 14), silver);
-            cannon.castShadow = true;
-            const bore = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.04, 12), darkBore);
-            bore.position.y = 0.22;
-            cannonGroup.add(cannon, bore);
+            const baseJoint = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.22, 12), steelBase);
+            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.115, 0.32, 16), cannonWhite);
+            barrel.position.y = 0.20;
+            barrel.castShadow = true;
+            const bore = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.072, 0.04, 14), darkBore);
+            bore.position.y = 0.355;
+            cannonGroup.add(baseJoint, barrel, bore);
             bodyPivot.add(cannonGroup);
 
-            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.44, 10), navyBlue);
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.135, 0.44, 10), skyBlue);
             arm.position.set(side * 0.6, 0.68, 0.14);
             arm.rotation.z = side * -0.9;
             arm.castShadow = true;
             bodyPivot.add(arm);
           });
 
-          const head = new THREE.Mesh(new THREE.SphereGeometry(0.37, 24, 20), navyBlue);
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.37, 24, 20), skyBlue);
           head.position.set(0, 1.24, 0.16);
           head.castShadow = true;
           bodyPivot.add(head);
 
-          // Cream Lower Jaw
-          const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.31, 16, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), cream);
+          // Short pointed blue ears on Blastoise's head
+          [-1, 1].forEach(side => {
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 8), skyBlue);
+            ear.position.set(side * 0.26, 0.32, -0.04);
+            ear.rotation.z = side * -0.45;
+            head.add(ear);
+          });
+
+          const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), tanBelly);
           jaw.position.set(0, -0.04, 0.04);
           head.add(jaw);
 
           faceRig = attachCurvedFaceDecals(head, 'blastoise', 0.378);
 
-          leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.28, 10), navyBlue);
-          leftLeg.position.set(-0.26, 0.14, 0.08);
-          rightLeg = leftLeg.clone(); rightLeg.position.x = 0.26;
-          bodyPivot.add(leftLeg, rightLeg);
+          // Stout sky-blue legs with three white claws on each foot
+          [-1, 1].forEach(side => {
+            const legGroup = new THREE.Group();
+            legGroup.position.set(side * 0.26, 0.14, 0.08);
+            const legCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.17, 0.28, 10), skyBlue);
+            legGroup.add(legCyl);
+
+            [-0.08, 0, 0.08].forEach(cx => {
+              const claw = new THREE.Mesh(new THREE.ConeGeometry(0.036, 0.11, 6), whiteClaw);
+              claw.rotation.x = Math.PI * 0.42;
+              claw.position.set(cx, -0.09, 0.17);
+              legGroup.add(claw);
+            });
+
+            bodyPivot.add(legGroup);
+            if (side === -1) leftLeg = legGroup;
+            else rightLeg = legGroup;
+          });
 
         } else if (id === 'zapdos') {
-          const gold = mat(0xfde047, 0.45);
-          const black = mat(0x1e293b, 0.6);
-          const orange = mat(0xf97316, 0.5);
+          // Electric-yellow & jet-black jagged plumage with long slender beak (matching reference)
+          const gold = shadedMat('#f7dc6f', '#fef9c3', '#eab308', 0.45);
+          const black = mat(0x111827, 0.6);
+          const beakGold = shadedMat('#e59866', '#fbbf24', '#b45309', 0.45);
+          const talonTan = mat(0xb4845c, 0.65);
 
-          const torso = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.88, 9), gold);
+          const torso = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.88, 9), gold);
           torso.position.y = 0.68;
           torso.castShadow = true;
           bodyPivot.add(torso);
 
-          const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 22, 18), gold);
+          const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 22, 18), gold);
           head.position.set(0, 1.18, 0.08);
           head.castShadow = true;
           bodyPivot.add(head);
 
-          faceRig = attachCurvedFaceDecals(head, 'zapdos', 0.358);
+          faceRig = attachCurvedFaceDecals(head, 'zapdos', 0.348);
 
-          // Layered Spiky Electric Head Crest
-          [-0.22, -0.08, 0.08, 0.22].forEach((cx, i) => {
-            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.40 + (i === 1 || i === 2 ? 0.12 : 0), 6), gold);
-            spike.position.set(cx, 1.50, 0.02);
+          // Spiky electric crown feathers
+          [-0.24, -0.10, 0.0, 0.10, 0.24].forEach((cx, i) => {
+            const spike = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.44 + (i === 2 ? 0.14 : 0), 5), gold);
+            spike.position.set(cx, 1.52, 0.02);
             spike.rotation.z = -cx * 1.45;
             bodyPivot.add(spike);
           });
 
-          // Sharp Orange-Gold Beak
-          const beak = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.48, 8), orange);
+          // Long slender pointed beak (matching reference)
+          const beak = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.58, 8), beakGold);
           beak.rotation.x = Math.PI / 2;
-          beak.position.set(0, -0.03, 0.46);
+          beak.position.set(0, -0.04, 0.52);
           head.add(beak);
 
-          // Multi-Layered Spiky Yellow & Black-Tipped Wings that Flap
+          // Multi-pointed jagged yellow outer & jet-black inner wings
           [-1, 1].forEach(side => {
             const wingGroup = new THREE.Group();
-            wingGroup.position.set(side * 0.36, 0.84, -0.04);
+            wingGroup.position.set(side * 0.34, 0.86, -0.04);
 
-            const wYellow1 = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.84, 6), gold);
-            wYellow1.rotation.z = side * -1.2;
-            wYellow1.position.set(side * 0.36, 0.04, 0);
-            wYellow1.castShadow = true;
+            [0.24, 0.02, -0.20].forEach((wy, idx) => {
+              const len = idx === 0 ? 1.05 : idx === 1 ? 0.88 : 0.72;
+              const yFeather = new THREE.Mesh(new THREE.ConeGeometry(0.16, len, 5), gold);
+              yFeather.scale.set(1, 1, 0.28);
+              yFeather.rotation.z = side * (-1.12 - idx * 0.18);
+              yFeather.position.set(side * (len * 0.45), wy, 0.02);
+              yFeather.castShadow = true;
+              wingGroup.add(yFeather);
 
-            const wBlack = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.68, 6), black);
-            wBlack.rotation.z = side * -1.42;
-            wBlack.position.set(side * 0.30, -0.08, -0.06);
+              if (idx < 2) {
+                const bFeather = new THREE.Mesh(new THREE.ConeGeometry(0.14, len * 0.88, 5), black);
+                bFeather.scale.set(1, 1, 0.25);
+                bFeather.rotation.z = side * (-1.20 - idx * 0.18);
+                bFeather.position.set(side * (len * 0.40), wy - 0.06, -0.04);
+                wingGroup.add(bFeather);
+              }
+            });
 
-            wingGroup.add(wYellow1, wBlack);
             bodyPivot.add(wingGroup);
             if (side === -1) wingLeftPivot = wingGroup;
             else wingRightPivot = wingGroup;
           });
 
+          // Spiky yellow & black tail fan
           tailPivot = new THREE.Group();
           tailPivot.position.set(0, 0.48, -0.32);
-          const tailSpike = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.58, 6), gold);
-          tailSpike.rotation.x = -1.2;
-          tailSpike.position.z = -0.22;
-          tailPivot.add(tailSpike);
+          [-0.14, 0, 0.14].forEach(tx => {
+            const tYellow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.62, 5), gold);
+            tYellow.scale.set(1, 1, 0.28);
+            tYellow.rotation.set(-1.25, 0, tx * 1.5);
+            tYellow.position.set(tx, 0, -0.24);
+            const tBlack = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.50, 5), black);
+            tBlack.scale.set(1, 1, 0.25);
+            tBlack.rotation.set(-1.28, 0, tx * 1.5);
+            tBlack.position.set(tx, -0.04, -0.22);
+            tailPivot.add(tYellow, tBlack);
+          });
           bodyPivot.add(tailPivot);
 
-          leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.36, 8), orange);
+          leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.36, 8), talonTan);
           leftLeg.position.set(-0.16, 0.18, 0.05);
           rightLeg = leftLeg.clone(); rightLeg.position.x = 0.16;
           bodyPivot.add(leftLeg, rightLeg);
 
         } else if (id === 'mew') {
+          // Soft pastel-pink feline sprite with sweeping teardrop-tipped tail (matching reference)
           isFloating = true;
-          const pink = mat(0xf9a8d4, 0.36, 0.08); // Soft pearlescent sheen
-          const hotPink = mat(0xf472b6, 0.4);
+          const pink = shadedMat('#f5c2d1', '#fce7f3', '#e598b0', 0.38);
+          const tailPink = shadedMat('#e598b0', '#f5c2d1', '#c4748d', 0.42);
 
-          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.35, 22, 18), pink);
-          torso.scale.set(0.88, 1.18, 0.86);
+          const torso = new THREE.Mesh(new THREE.SphereGeometry(0.34, 22, 18), pink);
+          torso.scale.set(0.86, 1.18, 0.86);
           torso.position.y = 0.82;
           torso.castShadow = true;
           bodyPivot.add(torso);
 
           const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 24, 20), pink);
+          head.scale.set(1.04, 0.96, 1.02);
           head.position.set(0, 1.32, 0.06);
           head.castShadow = true;
           bodyPivot.add(head);
 
-          faceRig = attachCurvedFaceDecals(head, 'mew', 0.388);
+          // Cute rounded cat muzzle on Mew
+          const muzzle = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), pink);
+          muzzle.scale.set(1.15, 0.72, 0.95);
+          muzzle.position.set(0, -0.09, 0.33);
+          head.add(muzzle);
+
+          faceRig = attachCurvedFaceDecals(head, 'mew', 0.39);
 
           [-1, 1].forEach(side => {
-            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.125, 0.32, 10), pink);
-            ear.position.set(side * 0.24, 1.64, 0.04);
+            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.30, 10), pink);
+            ear.scale.set(1, 1, 0.55);
+            ear.position.set(side * 0.24, 1.63, 0.04);
             ear.rotation.z = side * -0.45;
             ear.castShadow = true;
             bodyPivot.add(ear);
@@ -2429,33 +3105,33 @@
             arm.rotation.set(0.6, 0, side * -0.35);
             bodyPivot.add(arm);
 
-            const foot = new THREE.Mesh(new THREE.SphereGeometry(0.145, 14, 12), pink);
-            foot.scale.set(0.75, 1.48, 0.65);
-            foot.position.set(side * 0.24, 0.48, 0.12);
+            const foot = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), pink);
+            foot.scale.set(0.75, 1.55, 0.65);
+            foot.position.set(side * 0.24, 0.46, 0.12);
             foot.rotation.x = -0.35;
             bodyPivot.add(foot);
           });
 
-          // Long Undulating CatmullRomCurve3 Tail Ending in Oval Tip
           tailPivot = new THREE.Group();
           tailPivot.position.set(0, 0.68, -0.3);
           const curve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0.28, 0.16, -0.38),
-            new THREE.Vector3(0.12, 0.58, -0.58),
-            new THREE.Vector3(-0.20, 0.88, -0.36)
+            new THREE.Vector3(0.32, 0.18, -0.42),
+            new THREE.Vector3(0.14, 0.64, -0.64),
+            new THREE.Vector3(-0.22, 0.96, -0.38)
           ]);
-          const tailTube = new THREE.Mesh(new THREE.TubeGeometry(curve, 20, 0.032, 10, false), hotPink);
-          const tailBulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 10), hotPink);
-          tailBulb.scale.set(0.85, 1.25, 0.85);
-          tailBulb.position.set(-0.20, 0.88, -0.36);
+          const tailTube = new THREE.Mesh(new THREE.TubeGeometry(curve, 22, 0.030, 10, false), tailPink);
+          // Flat teardrop/oval paddle tip matching Mew reference
+          const tailBulb = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 12), pink);
+          tailBulb.scale.set(0.55, 1.55, 0.95);
+          tailBulb.rotation.z = 0.45;
+          tailBulb.position.set(-0.24, 0.98, -0.36);
           tailPivot.add(tailTube, tailBulb);
           bodyPivot.add(tailPivot);
         }
 
-        // Generous Invisible Touch Hit-Sphere so tapping moving Pokémon on mobile is effortless
         const collider = new THREE.Mesh(
-          new THREE.SphereGeometry(1.45, 12, 12),
+          new THREE.SphereGeometry(1.5, 12, 12),
           new THREE.MeshBasicMaterial({ visible: false })
         );
         collider.position.y = 0.85;
@@ -2466,6 +3142,7 @@
           id,
           root,
           bodyPivot,
+          helperRing,
           leftLeg,
           rightLeg,
           backLeftLeg,
@@ -2597,19 +3274,99 @@
         new THREE.Vector3(3.3, 0, 1.3)
       ];
 
-      function pickWanderTarget(index) {
-        for (let attempt = 0; attempt < 22; attempt++) {
-          const angle = Math.random() * Math.PI * 2;
-          const radius = 3.9 + Math.random() * 3.7;
-          const tx = Math.cos(angle) * radius;
-          const tz = Math.sin(angle) * radius - 0.3;
-          const distPot = Math.hypot(tx - (-2.55), tz - 2.35);
-          if (distPot > 1.75) {
-            return new THREE.Vector3(tx, 0, tz);
+      // Static circular obstacles with generous safety clearance radii
+      const STATIC_OBSTACLES = [
+        { x: 0.0, z: -0.45, r: 3.95 },   // Snorlax & Picnic Blanket
+        { x: -2.55, z: 2.35, r: 1.85 },  // Campfire & Cooking Pot
+        { x: 3.65, z: -2.00, r: 1.05 },  // Mossy Rock & Pokéball
+        { x: -7.15, z: -3.00, r: 1.25 }, // Left Boulder & Great Ball
+        { x: 7.40, z: -3.90, r: 1.05 }   // Wooden Signpost & Lantern
+      ];
+
+      const STEER_ANGLES_RAD = [
+        0, -0.24, 0.24, -0.48, 0.48, -0.78, 0.78,
+        -1.12, 1.12, -1.50, 1.50, -1.95, 1.95, -2.45, 2.45, 3.14
+      ];
+
+      // Checks if a straight-line corridor from startPos to endPos is clear of obstacles & peers
+      function isCorridorClear(startPos, endPos, ignoreIndex = -1) {
+        const steps = 10;
+        for (let s = 1; s <= steps; s++) {
+          const t = s / steps;
+          const px = startPos.x + (endPos.x - startPos.x) * t;
+          const pz = startPos.z + (endPos.z - startPos.z) * t;
+
+          if (Math.hypot(px, pz + 0.25) > 7.65) return false;
+
+          for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
+            const obs = STATIC_OBSTACLES[k];
+            if (Math.hypot(px - obs.x, pz - obs.z) < obs.r + 0.25) return false;
+          }
+
+          for (let j = 0; j < activeEntities.length; j++) {
+            if (j === ignoreIndex) continue;
+            const other = activeEntities[j];
+            const futureOtherX = other.pos.x + (other.vel ? other.vel.x * t * 1.4 : 0);
+            const futureOtherZ = other.pos.z + (other.vel ? other.vel.z * t * 1.4 : 0);
+            if (Math.hypot(px - futureOtherX, pz - futureOtherZ) < 1.55) return false;
           }
         }
-        const fallbackAngle = (index / 5) * Math.PI * 2;
-        return new THREE.Vector3(Math.cos(fallbackAngle) * 5.2, 0, Math.sin(fallbackAngle) * 5.2);
+        return true;
+      }
+
+      function pickWanderTarget(index, avoidPos = null, fromPos = null) {
+        let bestCandidate = null;
+        let bestScore = -Infinity;
+
+        for (let attempt = 0; attempt < 48; attempt++) {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 4.2 + Math.random() * 3.35;
+          const tx = Math.cos(angle) * radius;
+          const tz = Math.sin(angle) * radius - 0.30;
+
+          if (Math.hypot(tx, tz + 0.25) > 7.65) continue;
+
+          let hitsObstacle = false;
+          for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
+            const obs = STATIC_OBSTACLES[k];
+            if (Math.hypot(tx - obs.x, tz - obs.z) < obs.r + 0.35) {
+              hitsObstacle = true;
+              break;
+            }
+          }
+          if (hitsObstacle) continue;
+
+          let minPeerDist = 10;
+          for (let j = 0; j < activeEntities.length; j++) {
+            const other = activeEntities[j];
+            if (other.index === index) continue;
+            const dPos = Math.hypot(tx - other.pos.x, tz - other.pos.z);
+            const dTar = Math.hypot(tx - other.target.x, tz - other.target.z);
+            minPeerDist = Math.min(minPeerDist, dPos, dTar);
+          }
+          if (minPeerDist < 1.85) continue;
+
+          let avoidBonus = 0;
+          if (avoidPos) {
+            const dAvoid = Math.hypot(tx - avoidPos.x, tz - avoidPos.z);
+            if (dAvoid < 2.2) continue;
+            avoidBonus = Math.min(dAvoid, 5.0) * 0.35;
+          }
+
+          const candidate = new THREE.Vector3(tx, 0, tz);
+          const corridorBonus = fromPos && isCorridorClear(fromPos, candidate, index) ? 4.5 : 0;
+
+          const score = minPeerDist + avoidBonus + corridorBonus + Math.random() * 0.5;
+          if (score > bestScore) {
+            bestScore = score;
+            bestCandidate = candidate;
+          }
+        }
+
+        if (bestCandidate) return bestCandidate;
+
+        const fallbackAngle = ((index + Math.random() * 0.5) / 5) * Math.PI * 2;
+        return new THREE.Vector3(Math.cos(fallbackAngle) * 5.6, 0, Math.sin(fallbackAngle) * 5.6);
       }
 
       function syncActiveParty3D() {
@@ -2628,10 +3385,16 @@
             index: idx,
             model,
             pos: startPos.clone(),
-            target: pickWanderTarget(idx + 2),
+            vel: new THREE.Vector3(),
+            target: pickWanderTarget(idx, startPos, startPos),
             pauseTimer: 0.4 + idx * 0.35,
             walkPhase: idx * 1.4,
             bounceTimer: 0,
+            happyTimer: 0,
+            helperTimer: 0,
+            retargetCooldown: 0,
+            stuckCheckTimer: 0,
+            lastCheckPos: startPos.clone(),
             cutsceneSpot: SEMICIRCLE_SPOTS[idx % SEMICIRCLE_SPOTS.length].clone(),
             dancePhaseOffset: idx * 0.45
           });
@@ -2728,7 +3491,7 @@
           if (allArrived || cutscene.timer >= 1.15) {
             cutscene.phase = 'eat';
             cutscene.timer = 0;
-            setCharacterFace(snorlax3D.faceRig, true);
+            setSnorlaxHappy(true);
             dom.celebStatusText.textContent = `Everyone is enjoying ${cutscene.recipe.name}!`;
             sound.playServeChime();
 
@@ -2757,7 +3520,7 @@
 
         } else if (cutscene.phase === 'eat') {
           const eatWave = Math.sin(cutscene.timer * 11);
-          snorlax3D.headGroup.rotation.x = -0.32 + eatWave * 0.14;
+          snorlax3D.headGroup.rotation.x = -1.32 + eatWave * 0.12;
           snorlax3D.bodyGroup.scale.set(1 + eatWave * 0.03, 1 - eatWave * 0.03, 1);
 
           activeEntities.forEach((ent, i) => {
@@ -2780,10 +3543,10 @@
             cutscene.phase = 'dance';
             cutscene.timer = 0;
             clearCutsceneProps();
-            snorlax3D.headGroup.rotation.x = -0.32;
+            snorlax3D.headGroup.rotation.x = -1.32;
             snorlax3D.bodyGroup.scale.set(1, 1, 1);
 
-            setCharacterFace(snorlax3D.faceRig, true);
+            setSnorlaxHappy(true);
             activeEntities.forEach(ent => {
               ent.model.bodyPivot.rotation.x = 0;
               setCharacterFace(ent.model.faceRig, true);
@@ -2798,7 +3561,7 @@
           const t = cutscene.timer;
 
           const snorlaxCheer = Math.abs(Math.sin(t * 7.5));
-          snorlax3D.bodyGroup.position.y = 1.06 + snorlaxCheer * 0.22;
+          snorlax3D.bodyGroup.position.y = 0.94 + snorlaxCheer * 0.18;
           snorlax3D.headGroup.rotation.z = Math.sin(t * 9) * 0.14;
           snorlax3D.armPivots.forEach((ap, idx) => {
             ap.rotation.z = (idx === 0 ? 1 : -1) * Math.sin(t * 10) * 0.25;
@@ -2845,17 +3608,22 @@
         cutscene.phase = 'none';
         clearCutsceneProps();
 
-        setCharacterFace(snorlax3D.faceRig, false);
-        snorlax3D.bodyGroup.position.y = 1.06;
-        snorlax3D.headGroup.rotation.set(-0.32, 0, 0);
+        setSnorlaxHappy(false);
+        snorlax3D.bodyGroup.position.y = 0.86;
+        snorlax3D.headGroup.rotation.set(-1.32, 0, 0);
         snorlax3D.armPivots.forEach(ap => { ap.rotation.z = 0; });
 
         activeEntities.forEach((ent, idx) => {
           setCharacterFace(ent.model.faceRig, false);
+          ent.happyTimer = 0;
+          ent.retargetCooldown = 0;
+          ent.stuckCheckTimer = 0;
+          ent.vel.set(0, 0, 0);
+          ent.lastCheckPos.copy(ent.pos);
           ent.model.bodyPivot.position.y = 0;
           ent.model.bodyPivot.rotation.set(0, 0, 0);
           ent.model.bodyPivot.scale.set(1, 1, 1);
-          ent.target = pickWanderTarget(idx);
+          ent.target = pickWanderTarget(idx, ent.pos, ent.pos);
           ent.pauseTimer = 0.2;
         });
 
@@ -2864,7 +3632,7 @@
       }
 
       /* ======================================================================
-         13. AUTONOMOUS MEADOW WALKING & PROCEDURAL LIMB/WING/EAR ANIMATION
+         13. PREDICTIVE TRAJECTORY STEERING & PROCEDURAL LIMB/WING/EAR ANIMATION
          ====================================================================== */
       function lerpAngle(a, b, t) {
         let diff = b - a;
@@ -2873,9 +3641,126 @@
         return a + diff * Math.min(1, t);
       }
 
+      /**
+       * Time-to-Closest-Approach (TCPA) & Multi-Horizon Trajectory Prediction Algorithm.
+       * Evaluates 16 candidate headings over a 1.85-second look-ahead horizon against
+       * every peer Pokémon's predicted velocity vector and all static campsite obstacles,
+       * ensuring Pokémon proactively curve around each other and never collide or deadlock.
+       */
+      function predictBestVelocity(ent, index) {
+        const speed = 1.65;
+        const horizon = 1.85;
+        const peerSafeRadius = 1.72;
+        const peerHardRadius = 1.38;
+
+        const toGoalX = ent.target.x - ent.pos.x;
+        const toGoalZ = ent.target.z - ent.pos.z;
+        const goalDist = Math.hypot(toGoalX, toGoalZ) || 1;
+        const goalDirX = toGoalX / goalDist;
+        const goalDirZ = toGoalZ / goalDist;
+        const baseAngle = Math.atan2(goalDirX, goalDirZ);
+
+        const prevSpeed = Math.hypot(ent.vel.x, ent.vel.z);
+        const prevDirX = prevSpeed > 0.05 ? ent.vel.x / prevSpeed : goalDirX;
+        const prevDirZ = prevSpeed > 0.05 ? ent.vel.z / prevSpeed : goalDirZ;
+
+        let bestScore = -Infinity;
+        let bestVelX = 0;
+        let bestVelZ = 0;
+        let bestMinPeerDist = Infinity;
+
+        for (let aIdx = 0; aIdx < STEER_ANGLES_RAD.length; aIdx++) {
+          const offset = STEER_ANGLES_RAD[aIdx];
+          const candAngle = baseAngle + offset;
+          const dirX = Math.sin(candAngle);
+          const dirZ = Math.cos(candAngle);
+          const candVx = dirX * speed;
+          const candVz = dirZ * speed;
+
+          let penalty = 0;
+          let minPeerDist = Infinity;
+
+          // 1. Predict Time-to-Closest-Approach (TCPA) against all other Pokémon
+          for (let j = 0; j < activeEntities.length; j++) {
+            if (j === index) continue;
+            const other = activeEntities[j];
+            const dpx = ent.pos.x - other.pos.x;
+            const dpz = ent.pos.z - other.pos.z;
+            const dvx = candVx - other.vel.x;
+            const dvz = candVz - other.vel.z;
+
+            const dvSq = dvx * dvx + dvz * dvz;
+            let tcpa = 0;
+            if (dvSq > 0.0001) {
+              tcpa = THREE.MathUtils.clamp(-(dpx * dvx + dpz * dvz) / dvSq, 0, horizon);
+            }
+
+            const closestX = dpx + dvx * tcpa;
+            const closestZ = dpz + dvz * tcpa;
+            const dMin = Math.hypot(closestX, closestZ);
+            const dShort = Math.hypot(dpx + dvx * 0.28, dpz + dvz * 0.28);
+            const effectiveDist = Math.min(dMin, dShort);
+            minPeerDist = Math.min(minPeerDist, effectiveDist);
+
+            if (effectiveDist < peerSafeRadius) {
+              const penetration = peerSafeRadius - effectiveDist;
+              const urgency = 1.0 / (tcpa + 0.18);
+              penalty += penetration * penetration * 14.0 * urgency;
+              if (effectiveDist < peerHardRadius) {
+                penalty += 60.0 + (peerHardRadius - effectiveDist) * 80.0;
+              }
+            }
+          }
+
+          // 2. Predict Closest Approach against all Static Campsite Obstacles (Snorlax, Pot, Rocks, Sign)
+          for (let k = 0; k < STATIC_OBSTACLES.length; k++) {
+            const obs = STATIC_OBSTACLES[k];
+            const ox = ent.pos.x - obs.x;
+            const oz = ent.pos.z - obs.z;
+            const obsSafeR = obs.r + 0.22;
+
+            const tObs = THREE.MathUtils.clamp(-(ox * candVx + oz * candVz) / (speed * speed), 0, 1.55);
+            const dObs = Math.hypot(ox + candVx * tObs, oz + candVz * tObs);
+            if (dObs < obsSafeR) {
+              const pen = obsSafeR - dObs;
+              penalty += 45.0 + pen * pen * 95.0 / (tObs + 0.15);
+            }
+          }
+
+          // 3. Predict Perimeter Meadow Fence Clearance
+          const predEndX = ent.pos.x + candVx * 1.25;
+          const predEndZ = ent.pos.z + candVz * 1.25 + 0.25;
+          const predR = Math.hypot(predEndX, predEndZ);
+          if (predR > 7.65) {
+            penalty += 50.0 + (predR - 7.65) * 60.0;
+          }
+
+          // 4. Score Goal Progress + Smooth Velocity Momentum + Right-Hand Passing Symmetry Breaker
+          const goalAlign = dirX * goalDirX + dirZ * goalDirZ;
+          const momentumAlign = dirX * prevDirX + dirZ * prevDirZ;
+          const rightHandBias = Math.sin(offset) * 0.22;
+          const score = goalAlign * 2.5 + momentumAlign * 1.05 + rightHandBias - penalty;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestVelX = candVx;
+            bestVelZ = candVz;
+            bestMinPeerDist = minPeerDist;
+          }
+        }
+
+        // If every heading still shows a peer dangerously close within 0.65s, yield politely
+        if (bestMinPeerDist < 1.32) {
+          return { vx: 0, vz: 0, shouldYield: true };
+        }
+
+        return { vx: bestVelX, vz: bestVelZ, shouldYield: false };
+      }
+
       function updateWanderingPokemon(dt, elapsed) {
         for (let i = 0; i < activeEntities.length; i++) {
           const ent = activeEntities[i];
+          if (ent.retargetCooldown > 0) ent.retargetCooldown = Math.max(0, ent.retargetCooldown - dt);
 
           // Zapdos gentle wing flapping even while hovering/walking
           if (ent.model.wingLeftPivot && ent.model.wingRightPivot) {
@@ -2891,17 +3776,36 @@
             ent.model.earRightPivot.rotation.x = -earBob;
           }
 
+          // Happy face swap decay after being tapped
+          if (ent.happyTimer > 0) {
+            ent.happyTimer = Math.max(0, ent.happyTimer - dt);
+            setCharacterFace(ent.model.faceRig, ent.happyTimer > 0);
+          }
+
+          // Golden Helper Ring pulse when toddler tapped a missing ingredient
+          if (ent.helperTimer > 0) {
+            ent.helperTimer = Math.max(0, ent.helperTimer - dt);
+            ent.model.helperRing.visible = ent.helperTimer > 0;
+            const pulse = 1.0 + Math.sin(elapsed * 10) * 0.18;
+            ent.model.helperRing.scale.set(pulse, pulse, 1);
+          } else {
+            ent.model.helperRing.visible = false;
+          }
+
           if (ent.bounceTimer > 0) {
             ent.bounceTimer = Math.max(0, ent.bounceTimer - dt);
-            const b = Math.sin((1 - ent.bounceTimer / 0.48) * Math.PI);
-            ent.model.bodyPivot.position.y = b * 0.65;
-            ent.model.bodyPivot.scale.set(1 - b * 0.12, 1 + b * 0.16, 1 - b * 0.12);
+            const b = Math.sin((1 - ent.bounceTimer / 0.52) * Math.PI);
+            ent.model.bodyPivot.position.y = b * 0.78;
+            ent.model.bodyPivot.scale.set(1 - b * 0.15, 1 + b * 0.20, 1 - b * 0.15);
           } else {
             ent.model.bodyPivot.scale.set(1, 1, 1);
           }
 
           if (ent.pauseTimer > 0) {
             ent.pauseTimer -= dt;
+            ent.vel.set(0, 0, 0);
+            ent.stuckCheckTimer = 0;
+            ent.lastCheckPos.copy(ent.pos);
             if (ent.bounceTimer <= 0) {
               ent.model.bodyPivot.position.y = ent.model.isFloating
                 ? Math.sin(elapsed * 3.2 + ent.walkPhase) * 0.12
@@ -2913,59 +3817,57 @@
             continue;
           }
 
-          const steer = ent.target.clone().sub(ent.pos);
-          steer.y = 0;
-          const distToTarget = steer.length();
-
-          if (distToTarget < 0.35) {
-            ent.target = pickWanderTarget(i);
-            ent.pauseTimer = 1.0 + Math.random() * 1.8;
+          const distToTarget = Math.hypot(ent.target.x - ent.pos.x, ent.target.z - ent.pos.z);
+          if (distToTarget < 0.45) {
+            ent.vel.set(0, 0, 0);
+            ent.target = pickWanderTarget(i, ent.pos, ent.pos);
+            ent.pauseTimer = 0.9 + Math.random() * 1.4;
             continue;
           }
 
-          steer.normalize();
-
-          const fromCenter = new THREE.Vector2(ent.pos.x, ent.pos.z + 0.55);
-          if (fromCenter.length() < 3.65) {
-            fromCenter.normalize();
-            steer.x += fromCenter.x * 2.2;
-            steer.z += fromCenter.y * 2.2;
-          }
-
-          const fromPot = new THREE.Vector2(ent.pos.x - (-2.55), ent.pos.z - 2.35);
-          if (fromPot.length() < 1.65) {
-            fromPot.normalize();
-            steer.x += fromPot.x * 2.4;
-            steer.z += fromPot.y * 2.4;
-          }
-
-          for (let j = 0; j < activeEntities.length; j++) {
-            if (i === j) continue;
-            const other = activeEntities[j];
-            const diff = ent.pos.clone().sub(other.pos);
-            diff.y = 0;
-            const d = diff.length();
-            if (d > 0.001 && d < 1.65) {
-              diff.normalize().multiplyScalar((1.65 - d) * 1.8);
-              steer.add(diff);
+          // Run Predictive Trajectory & TCPA Steering
+          const prediction = predictBestVelocity(ent, i);
+          if (prediction.shouldYield) {
+            ent.vel.set(0, 0, 0);
+            ent.pauseTimer = 0.45 + Math.random() * 0.35;
+            if (ent.retargetCooldown <= 0) {
+              ent.target = pickWanderTarget(i, ent.pos, ent.pos);
+              ent.retargetCooldown = 0.8;
             }
+            continue;
           }
 
-          steer.normalize();
-          const speed = 1.65;
-          ent.pos.addScaledVector(steer, speed * dt);
+          // Smoothly blend velocity so turns look natural and fluid
+          ent.vel.x = THREE.MathUtils.lerp(ent.vel.x, prediction.vx, Math.min(1, dt * 8.5));
+          ent.vel.z = THREE.MathUtils.lerp(ent.vel.z, prediction.vz, Math.min(1, dt * 8.5));
 
-          const rNow = Math.hypot(ent.pos.x, ent.pos.z);
-          if (rNow > 8.0) {
-            ent.pos.x *= 8.0 / rNow;
-            ent.pos.z *= 8.0 / rNow;
-            ent.target = pickWanderTarget(i);
+          ent.pos.x += ent.vel.x * dt;
+          ent.pos.z += ent.vel.z * dt;
+
+          // Progress watchdog: if detouring longer than 0.8s without advancing, select a fresh open waypoint
+          ent.stuckCheckTimer += dt;
+          if (ent.stuckCheckTimer >= 0.8) {
+            if (ent.pos.distanceTo(ent.lastCheckPos) < 0.35 && ent.retargetCooldown <= 0) {
+              ent.target = pickWanderTarget(i, ent.pos, ent.pos);
+              ent.retargetCooldown = 0.8;
+            }
+            ent.lastCheckPos.copy(ent.pos);
+            ent.stuckCheckTimer = 0;
+          }
+
+          // Safety boundary clamp (keeps units strictly inside the meadow ring)
+          const rNow = Math.hypot(ent.pos.x, ent.pos.z + 0.25);
+          if (rNow > 7.9) {
+            ent.pos.x *= 7.9 / rNow;
+            ent.pos.z = (ent.pos.z + 0.25) * (7.9 / rNow) - 0.25;
           }
 
           ent.model.root.position.copy(ent.pos);
 
-          const desiredYaw = Math.atan2(steer.x, steer.z);
-          ent.model.root.rotation.y = lerpAngle(ent.model.root.rotation.y, desiredYaw, dt * 7);
+          if (Math.hypot(ent.vel.x, ent.vel.z) > 0.08) {
+            const desiredYaw = Math.atan2(ent.vel.x, ent.vel.z);
+            ent.model.root.rotation.y = lerpAngle(ent.model.root.rotation.y, desiredYaw, dt * 8);
+          }
 
           // Applin hops playfully; quadrupeds & bipeds alternate legs
           const isHopper = ent.id === 'applin';
@@ -2992,7 +3894,7 @@
       }
 
       /* ======================================================================
-         14. 3D-TO-2D PROJECTION FOR FLOATING SVG '+1 [INGREDIENT]' & EMOTES
+         14. 3D-TO-2D PROJECTION, GROUND RIPPLE RINGS & FLYING SVG TREATS
          ====================================================================== */
       const fxLayer = document.getElementById('fx-layer');
 
@@ -3001,6 +3903,79 @@
         return {
           x: (v.x * 0.5 + 0.5) * window.innerWidth,
           y: (-v.y * 0.5 + 0.5) * window.innerHeight
+        };
+      }
+
+      // Expanding 3D Ground Ripple Ring for immediate tap confirmation
+      const activeRipples = [];
+      function spawnGroundRipple(worldPos, colorHex = 0xfacc15, maxScale = 2.4) {
+        const ringGeo = new THREE.RingGeometry(0.32, 0.46, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.92
+        });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(worldPos.x, 0.04, worldPos.z);
+        scene.add(ring);
+        activeRipples.push({ mesh: ring, mat: ringMat, geo: ringGeo, age: 0, maxAge: 0.55, maxScale });
+      }
+
+      function updateGroundRipples(dt) {
+        for (let i = activeRipples.length - 1; i >= 0; i--) {
+          const r = activeRipples[i];
+          r.age += dt;
+          if (r.age >= r.maxAge) {
+            scene.remove(r.mesh);
+            r.geo.dispose();
+            r.mat.dispose();
+            activeRipples.splice(i, 1);
+            continue;
+          }
+          const t = r.age / r.maxAge;
+          const ease = 1 - Math.pow(1 - t, 3);
+          r.mesh.scale.setScalar(0.5 + ease * r.maxScale);
+          r.mat.opacity = 0.9 * (1 - t);
+        }
+      }
+
+      // Smoothly flies a large custom SVG ingredient icon into its bottom dock card
+      function spawnFlyIngredientToDock(worldPos, pokeId) {
+        const start = worldToScreen(worldPos);
+        const targetCard = dom.ingredientBagStrip.querySelector(`[data-bag-poke="${pokeId}"]`);
+        const rect = targetCard
+          ? targetCard.getBoundingClientRect()
+          : { left: window.innerWidth * 0.5, top: window.innerHeight - 48, width: 40, height: 40 };
+        const endX = rect.left + rect.width * 0.5;
+        const endY = rect.top + rect.height * 0.5;
+
+        const el = document.createElement('div');
+        el.className = 'fixed w-11 h-11 pointer-events-none drop-shadow-lg z-30';
+        el.style.left = `${start.x}px`;
+        el.style.top = `${start.y}px`;
+        el.style.transform = 'translate(-50%, -50%)';
+        el.innerHTML = INGREDIENT_SVGS[pokeId] || '';
+        fxLayer.appendChild(el);
+
+        const midX = (start.x + endX) * 0.5;
+        const midY = Math.min(start.y, endY) - 70;
+
+        const anim = el.animate([
+          { left: `${start.x}px`, top: `${start.y}px`, transform: 'translate(-50%, -50%) scale(0.7)', opacity: 1 },
+          { left: `${midX}px`, top: `${midY}px`, transform: 'translate(-50%, -50%) scale(1.35)', opacity: 1, offset: 0.45 },
+          { left: `${endX}px`, top: `${endY}px`, transform: 'translate(-50%, -50%) scale(0.85)', opacity: 0.95 }
+        ], { duration: 540, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+
+        anim.onfinish = () => {
+          el.remove();
+          const freshCard = dom.ingredientBagStrip.querySelector(`[data-bag-poke="${pokeId}"]`);
+          if (freshCard) {
+            freshCard.classList.remove('animate-counter-pop');
+            void freshCard.offsetWidth;
+            freshCard.classList.add('animate-counter-pop');
+          }
         };
       }
 
@@ -3077,7 +4052,7 @@
       }
 
       /* ======================================================================
-         15. DEDICATED DIRECT RAYCAST TAP INPUT (ZERO CAMERA ROTATION/DRAG)
+         15. DEDICATED DIRECT RAYCAST TAP INPUT (POKÉMON, SNORLAX & GRASS)
          ====================================================================== */
       const raycaster = new THREE.Raycaster();
       const pointerNDC = new THREE.Vector2();
@@ -3090,7 +4065,7 @@
         pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
         raycaster.setFromCamera(pointerNDC, camera);
 
-        const targets = [];
+        const targets = [groundMesh];
         activeEntities.forEach(ent => {
           ent.model.root.children.forEach(c => {
             if (c.userData && c.userData.interactType === 'pokemon') targets.push(c);
@@ -3106,15 +4081,41 @@
         const hits = raycaster.intersectObjects(targets, false);
         if (hits.length === 0) return;
 
-        // Prioritize tapping a moving Pokémon over Snorlax/Pot if overlapping in screen space
-        const pokeHit = hits.find(h => h.object.userData.interactType === 'pokemon');
-        const chosen = pokeHit ? pokeHit.object.userData : hits[0].object.userData;
-
-        if (chosen.interactType === 'pokemon') {
-          gatherFromPokemon(chosen.pokemonId);
-        } else if (chosen.interactType === 'cook') {
-          openCookModal();
+        // 1. Prioritize tapping a moving Pokémon
+        const pokeHit = hits.find(h => h.object.userData && h.object.userData.interactType === 'pokemon');
+        if (pokeHit) {
+          gatherFromPokemon(pokeHit.object.userData.pokemonId);
+          return;
         }
+
+        // 2. Next prioritize Snorlax or Cooking Pot
+        const cookHit = hits.find(h => h.object.userData && h.object.userData.interactType === 'cook');
+        if (cookHit) {
+          triggerSnorlaxTap();
+          return;
+        }
+
+        // 3. Tapping empty grass spawns a joyful expanding star ripple ring!
+        const groundHit = hits.find(h => h.object === groundMesh);
+        if (groundHit) {
+          sound.playGrassPluck();
+          spawnGroundRipple(groundHit.point, 0xffffff, 1.5);
+          spawn3DSparkleBurst(groundHit.point.clone().setY(0.25), 5);
+        }
+      }
+
+      function triggerSnorlaxTap() {
+        sound.playSnorlaxGiggle();
+        snorlax3D.jiggleTimer = 0.65;
+        setSnorlaxHappy(true);
+        spawnGroundRipple(snorlax3D.root.position, 0xf43f5e, 3.8);
+        spawnFloatingSvgEmote(snorlax3D.headGroup.position.clone().add(new THREE.Vector3(-0.3, 0.85, 0)), UI_SVGS.heart);
+        spawnFloatingSvgEmote(snorlax3D.headGroup.position.clone().add(new THREE.Vector3(0.4, 0.95, 0)), UI_SVGS.heart);
+
+        setTimeout(() => {
+          if (!cutscene.active) setSnorlaxHappy(false);
+          openCookModal();
+        }, 280);
       }
 
       function gatherFromPokemon(pokeId) {
@@ -3128,10 +4129,15 @@
         dom.onboardingPill.classList.add('opacity-0');
 
         sound.playGather(poke.pitch);
-        ent.bounceTimer = 0.48;
-        ent.pauseTimer = 0.55;
+        ent.bounceTimer = 0.52;
+        ent.happyTimer = 1.15;
+        ent.helperTimer = 0;
+        ent.pauseTimer = 0.65;
+
         const burstPos = ent.pos.clone().setY(1.25);
-        spawn3DSparkleBurst(burstPos, 9);
+        spawnGroundRipple(ent.pos, 0xfacc15, 2.3);
+        spawn3DSparkleBurst(burstPos, 10);
+        spawnFlyIngredientToDock(burstPos, pokeId);
         spawnGatherPopup(burstPos, poke);
 
         renderIngredientBag();
@@ -3172,9 +4178,11 @@
 
         bottomDock: document.getElementById('bottom-dock'),
         ingredientBagStrip: document.getElementById('ingredient-bag-strip'),
-        totalIngredientsCount: document.getElementById('total-ingredients-count'),
+        hudPartyMiniIcons: document.getElementById('hud-party-mini-icons'),
         partyCountLabel: document.getElementById('party-count-label'),
         btnOpenCook: document.getElementById('btn-open-cook'),
+        feedBtnIllustration: document.getElementById('feed-btn-illustration'),
+        feedBtnSubtext: document.getElementById('feed-btn-subtext'),
         cookReadyBadge: document.getElementById('cook-ready-badge'),
 
         modalParty: document.getElementById('modal-party'),
@@ -3202,67 +4210,96 @@
         dom.rankLabel.textContent = rankInfo.current.name;
         dom.strengthValue.textContent = state.strength.toLocaleString();
         dom.rankProgressBar.style.width = `${rankInfo.progressPct}%`;
-        dom.nextRankLabel.textContent = rankInfo.next ? `Next: ${rankInfo.next.min.toLocaleString()}` : 'MAX RANK!';
-        dom.rankBadge.className = `flex flex-col items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${rankInfo.current.gradient} text-white shadow-inner shrink-0`;
+        dom.nextRankLabel.textContent = rankInfo.next ? `${rankInfo.next.min.toLocaleString()}` : 'MAX!';
+        dom.rankBadge.className = `flex flex-col items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br ${rankInfo.current.gradient} text-white shadow-inner shrink-0`;
 
         dom.partyCountLabel.textContent = state.party.length;
+        dom.hudPartyMiniIcons.innerHTML = state.party
+          .map(pId => `<span class="w-6 h-6 rounded-full bg-white/90 p-0.5 shadow-xs border border-indigo-300 inline-block">${POKEMON_PORTRAIT_SVGS[pId] || ''}</span>`)
+          .join('');
+
+        if (!dom.feedBtnIllustration.innerHTML) {
+          dom.feedBtnIllustration.innerHTML = UI_SVGS.snorlaxPot;
+        }
+
         sound.muted = state.muted;
         dom.soundIconWrap.innerHTML = state.muted ? UI_SVGS.soundOff : UI_SVGS.soundOn;
         dom.themeIconWrap.innerHTML = state.isNight ? UI_SVGS.moon : UI_SVGS.sun;
         dom.themeText.textContent = state.isNight ? 'Night' : 'Day';
 
-        const anyReady = RECIPES.some(canCookRecipe);
-        if (anyReady) {
+        const readyRecipe = RECIPES.find(canCookRecipe);
+        if (readyRecipe) {
           dom.cookReadyBadge.classList.remove('hidden');
-          dom.btnOpenCook.classList.add('animate-cook-ready');
+          dom.btnOpenCook.classList.add('animate-cook-ready', 'animate-toddler-bounce');
+          dom.feedBtnSubtext.textContent = `${readyRecipe.name} Ready!`;
         } else {
           dom.cookReadyBadge.classList.add('hidden');
-          dom.btnOpenCook.classList.remove('animate-cook-ready');
+          dom.btnOpenCook.classList.remove('animate-cook-ready', 'animate-toddler-bounce');
+          dom.feedBtnSubtext.textContent = 'Tap to Cook Meal';
         }
       }
 
       function renderIngredientBag() {
-        let total = 0;
         let html = '';
 
         POKEMON_ORDER.forEach(pokeId => {
           const p = POKEMON_DATA[pokeId];
           const count = state.inventory[pokeId] || 0;
-          total += count;
           const inParty = state.party.includes(pokeId);
 
           html += `
             <button type="button" data-bag-poke="${pokeId}"
-              class="bag-chip relative shrink-0 w-[68px] sm:w-auto flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl border ${
-                inParty ? 'bg-emerald-50/90 border-emerald-300' : 'bg-slate-50/90 border-slate-200'
+              class="bag-chip relative shrink-0 min-w-[68px] min-h-[68px] sm:min-w-0 flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl border-2 ${
+                inParty ? 'bg-emerald-50 border-emerald-400 shadow-xs' : 'bg-slate-50 border-slate-200'
               } active:scale-95 transition cursor-pointer"
               title="${p.ingredient.name} (${p.name})">
-              <div class="flex items-center gap-1">
-                <span class="w-4 h-4 inline-block shrink-0">${INGREDIENT_SVGS[pokeId]}</span>
-                <span class="font-display font-bold text-xs ${count > 0 ? 'text-slate-900' : 'text-slate-400'}">${count}</span>
-              </div>
-              <span class="text-[9px] font-extrabold text-slate-600 truncate max-w-full mt-0.5">${p.ingredient.shortName}</span>
-              ${inParty ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"></span>' : ''}
+              <span class="w-8 h-8 inline-block shrink-0">${INGREDIENT_SVGS[pokeId]}</span>
+              <span class="font-display font-black text-base leading-none mt-0.5 ${count > 0 ? 'text-slate-900' : 'text-slate-400'}">${count}</span>
+              ${inParty ? '<span class="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow-xs"></span>' : ''}
             </button>
           `;
         });
 
         dom.ingredientBagStrip.innerHTML = html;
-        dom.totalIngredientsCount.textContent = total;
 
         dom.ingredientBagStrip.querySelectorAll('.bag-chip').forEach(btn => {
           btn.addEventListener('click', () => {
-            const p = POKEMON_DATA[btn.dataset.bagPoke];
-            const inParty = state.party.includes(p.id);
-            sound.playUiPop(520);
-            showToast(
-              inParty
-                ? `${p.ingredient.name}: Tap ${p.name} in the meadow!`
-                : `${p.ingredient.name}: Swap ${p.name} into your Party!`,
-              INGREDIENT_SVGS[p.id]
-            );
+            const pokeId = btn.dataset.bagPoke;
+            guideToddlerToPokemon(pokeId);
           });
         });
+      }
+
+      // Highlights a Pokémon in the 3D meadow with a pulsing golden ring so a 3-year-old knows who to tap
+      function guideToddlerToPokemon(pokeId) {
+        const poke = POKEMON_DATA[pokeId];
+        if (!poke) return;
+
+        // If this Pokémon isn't currently in the active 5-Pokémon meadow party, swap them into slot 5 automatically!
+        if (!state.party.includes(pokeId)) {
+          if (state.party.length >= 5) {
+            state.party[4] = pokeId;
+          } else {
+            state.party.push(pokeId);
+          }
+          saveState();
+          syncActiveParty3D();
+          renderIngredientBag();
+          renderHud();
+        }
+
+        const ent = activeEntities.find(e => e.id === pokeId);
+        if (ent) {
+          ent.helperTimer = 4.5;
+          ent.bounceTimer = 0.52;
+          ent.happyTimer = 1.2;
+          ent.pauseTimer = 1.5;
+          spawnGroundRipple(ent.pos, 0xfacc15, 2.8);
+          spawn3DSparkleBurst(ent.pos.clone().setY(1.2), 10);
+        }
+
+        sound.playGather(poke.pitch);
+        showToast(`Tap ${poke.name} for ${poke.ingredient.name}!`, POKEMON_PORTRAIT_SVGS[pokeId]);
       }
 
       /* ----------------------------------------------------------------------
@@ -3404,7 +4441,7 @@
         if (firstReady) {
           dom.quickCookBar.classList.remove('hidden');
           dom.quickCookIcon.innerHTML = DISH_SVGS[firstReady.id] || '';
-          dom.quickCookLabel.textContent = `${firstReady.name} is ready to serve!`;
+          dom.quickCookLabel.textContent = `${firstReady.name} is ready!`;
           dom.quickCookBar.dataset.readyRecipeId = firstReady.id;
         } else {
           dom.quickCookBar.classList.add('hidden');
@@ -3418,57 +4455,55 @@
             const p = POKEMON_DATA[req.pokemonId];
             const owned = state.inventory[req.pokemonId] || 0;
             const ok = owned >= req.count;
-            const inParty = state.party.includes(req.pokemonId);
 
             return `
-              <div class="flex items-center justify-between gap-1.5 px-2 py-1 rounded-xl border ${
-                ok ? 'bg-emerald-50 border-emerald-300 text-emerald-950' : 'bg-rose-50/70 border-rose-200 text-slate-700'
-              }">
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="w-4 h-4 inline-block shrink-0">${INGREDIENT_SVGS[req.pokemonId]}</span>
-                  <div class="min-w-0">
-                    <div class="text-[11px] font-extrabold truncate leading-tight">${p.ingredient.name}</div>
-                    <div class="text-[9px] font-bold ${inParty ? 'text-emerald-600' : 'text-slate-400'} leading-tight">${p.name}</div>
-                  </div>
-                </div>
-                <span class="font-display font-bold text-[11px] px-1.5 py-0.5 rounded-lg shrink-0 ${
-                  ok ? 'bg-emerald-500 text-white' : 'bg-white text-rose-600 border border-rose-200'
+              <button type="button" data-missing-poke="${req.pokemonId}"
+                class="min-h-[48px] flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-2xl border-2 transition cursor-pointer ${
+                  ok
+                    ? 'bg-emerald-100 border-emerald-500 text-emerald-950'
+                    : 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-slate-800 active:scale-95'
                 }">
-                  ${owned}/${req.count}
-                </span>
-              </div>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="w-6 h-6 inline-block shrink-0">${INGREDIENT_SVGS[req.pokemonId]}</span>
+                  <span class="w-5 h-5 rounded-full bg-white p-0.5 border border-slate-200 inline-block shrink-0">${POKEMON_PORTRAIT_SVGS[req.pokemonId]}</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <span class="font-display font-black text-xs">${owned}/${req.count}</span>
+                  ${
+                    ok
+                      ? `<span class="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-xs">${UI_SVGS.check}</span>`
+                      : `<span class="w-5 h-5 rounded-full bg-amber-400 text-slate-900 font-black text-xs flex items-center justify-center">?</span>`
+                  }
+                </div>
+              </button>
             `;
           }).join('');
 
           html += `
-            <div class="bg-white rounded-2xl p-3 border-2 ${ready ? 'border-amber-400 shadow-md' : 'border-amber-200/80'}">
-              <div class="flex items-center justify-between gap-2.5">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-13 h-13 w-12 h-12 rounded-2xl bg-amber-100/80 border border-amber-200 p-1 flex items-center justify-center shrink-0">
-                    ${DISH_SVGS[recipe.id] || ''}
-                  </div>
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      <h4 class="font-display font-bold text-base text-slate-800 truncate">${recipe.name}</h4>
-                      <span class="bg-amber-100 text-amber-800 font-extrabold text-[11px] px-2 py-0.5 rounded-full border border-amber-300">
-                        +${recipe.baseStrength.toLocaleString()}
-                      </span>
-                    </div>
-                    <p class="text-[11px] font-semibold text-slate-500 line-clamp-2 mt-0.5">${recipe.description}</p>
-                  </div>
+            <div data-recipe-card="${recipe.id}" role="button" tabindex="0"
+              class="rounded-3xl p-3.5 border-4 flex flex-col justify-between transition select-none ${
+                ready
+                  ? 'bg-gradient-to-b from-emerald-50 to-green-100 border-emerald-500 shadow-xl animate-toddler-bounce cursor-pointer active:scale-95'
+                  : 'bg-white border-amber-200 shadow-sm'
+              }">
+              <div class="flex items-center gap-3">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-100/90 border-2 border-amber-300 p-1.5 flex items-center justify-center shrink-0">
+                  ${DISH_SVGS[recipe.id] || ''}
                 </div>
-
-                <button type="button" data-cook-recipe="${recipe.id}" ${ready ? '' : 'disabled'}
-                  class="shrink-0 font-display font-bold text-xs sm:text-sm px-4 py-2.5 rounded-2xl transition ${
+                <div class="min-w-0 flex-1">
+                  <h4 class="font-display font-bold text-base sm:text-lg text-slate-800 leading-tight">${recipe.name}</h4>
+                  <div class="inline-flex items-center gap-1 bg-amber-100 text-amber-800 font-extrabold text-xs px-2.5 py-0.5 rounded-full border border-amber-300 mt-1">
+                    <span>+${recipe.baseStrength.toLocaleString()}</span>
+                  </div>
+                  ${
                     ready
-                      ? 'bg-gradient-to-b from-orange-400 to-orange-600 hover:from-orange-300 hover:to-orange-500 active:scale-95 text-white shadow border-b-4 border-orange-800 cursor-pointer'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  }">
-                  Cook
-                </button>
+                      ? `<div class="mt-1.5 inline-block bg-emerald-500 text-white font-display font-extrabold text-xs uppercase tracking-wider px-3 py-1 rounded-full shadow">TAP TO COOK!</div>`
+                      : `<div class="mt-1 text-[11px] font-bold text-slate-400">Tap ? icon for help</div>`
+                  }
+                </div>
               </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2.5 pt-2 border-t border-slate-100">
+              <div class="grid grid-cols-1 gap-1.5 mt-3 pt-2.5 border-t border-slate-200/80">
                 ${badgesHTML}
               </div>
             </div>
@@ -3476,10 +4511,37 @@
         });
 
         dom.recipesList.innerHTML = html;
-        dom.recipesList.querySelectorAll('[data-cook-recipe]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const recipe = RECIPES.find(r => r.id === btn.dataset.cookRecipe);
-            if (recipe && canCookRecipe(recipe)) cookRecipe(recipe);
+
+        // Clicking anywhere on a ready recipe card immediately cooks it!
+        dom.recipesList.querySelectorAll('[data-recipe-card]').forEach(card => {
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('[data-missing-poke]')) return;
+            const recipe = RECIPES.find(r => r.id === card.dataset.recipeCard);
+            if (recipe && canCookRecipe(recipe)) {
+              cookRecipe(recipe);
+            } else if (recipe) {
+              const missing = recipe.ingredients.find(req => (state.inventory[req.pokemonId] || 0) < req.count);
+              if (missing) {
+                closeCookModal();
+                guideToddlerToPokemon(missing.pokemonId);
+              }
+            }
+          });
+        });
+
+        // Clicking an ingredient pill either cooks (if ready) or closes the sheet & highlights the helper Pokémon!
+        dom.recipesList.querySelectorAll('[data-missing-poke]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const parentCard = btn.closest('[data-recipe-card]');
+            const recipe = parentCard ? RECIPES.find(r => r.id === parentCard.dataset.recipeCard) : null;
+            if (recipe && canCookRecipe(recipe)) {
+              cookRecipe(recipe);
+              return;
+            }
+            const pokeId = btn.dataset.missingPoke;
+            closeCookModal();
+            guideToddlerToPokemon(pokeId);
           });
         });
       }
@@ -3644,19 +4706,31 @@
 
         if (fireflyMat.opacity > 0.02) {
           fireflies.forEach(ff => {
-            const p = elapsed * 1.4 + ff.userData.phase;
-            ff.position.set(
-              ff.userData.baseX + Math.sin(p) * 0.65,
-              ff.userData.baseY + Math.cos(p * 1.3) * 0.35,
-              ff.userData.baseZ + Math.cos(p * 0.9) * 0.65
-            );
+            const d = ff.userData;
+            ff.position.x = d.baseX + Math.sin(elapsed * 1.4 + d.phase) * 0.45;
+            ff.position.y = d.baseY + Math.cos(elapsed * 1.9 + d.phase) * 0.25;
+            ff.position.z = d.baseZ + Math.sin(elapsed * 1.2 + d.phase * 1.3) * 0.45;
           });
         }
 
-        // 2. Snorlax Lounging Belly Breathing & Sleepy Zzz Sprites
+        // 2. Snorlax Lounging Belly Breathing, Tap Belly Jiggle & Sleepy Zzz Sprites
         if (!cutscene.active) {
           const breath = Math.sin(elapsed * 2.1);
-          snorlax3D.belly.scale.set(1.02 + breath * 0.035, 0.66 + breath * 0.055, 1.06 + breath * 0.035);
+          let jiggleX = 0;
+          let jiggleY = 0;
+          if (snorlax3D.jiggleTimer > 0) {
+            snorlax3D.jiggleTimer = Math.max(0, snorlax3D.jiggleTimer - dt);
+            const jWave = Math.sin((1 - snorlax3D.jiggleTimer / 0.65) * Math.PI * 5) * (snorlax3D.jiggleTimer / 0.65);
+            jiggleX = jWave * 0.08;
+            jiggleY = -jWave * 0.07;
+          }
+          // Physically rise & expand Snorlax's 3D belly dome so the belly itself moves smoothly
+          snorlax3D.belly.position.y = 0.52 + breath * 0.05 + jiggleY;
+          snorlax3D.belly.scale.set(
+            1.02 + breath * 0.022 + jiggleX,
+            0.58 + breath * 0.024,
+            1.02 + breath * 0.022 + jiggleX
+          );
           snorlax3D.headGroup.rotation.z = Math.sin(elapsed * 1.05) * 0.035;
 
           if (Math.floor((elapsed - dt) * 0.65) !== Math.floor(elapsed * 0.65)) {
@@ -3671,8 +4745,9 @@
           updateWanderingPokemon(dt, elapsed);
         }
 
-        // 4. Update 3D Sparkles & Keep Camera Strictly Fixed
+        // 4. Update 3D Sparkles, Ground Ripple Rings & Keep Camera Strictly Fixed
         update3DSparks(dt);
+        updateGroundRipples(dt);
         applyFixedCameraPose();
 
         renderer.render(scene, camera);
