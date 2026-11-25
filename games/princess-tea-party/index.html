@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#ff7eb3" />
+  <title>Princess Dress-Up & Tea Party</title>
+  <style>
+    :root {
+      --pink-1: #fff0f7;
+      --pink-2: #ffd6ea;
+      --pink-3: #ff85bc;
+      --pink-4: #e83e8c;
+      --purple-1: #f3e8ff;
+      --purple-2: #9b5de5;
+      --gold-1: #fff3b0;
+      --gold-2: #ffb703;
+      --teal-1: #d8f8f3;
+      --teal-2: #00bbf9;
+      --text-dark: #4a1c40;
+      --shadow-soft: 0 8px 20px rgba(120, 35, 90, 0.16);
+      --shadow-btn: 0 5px 0 rgba(130, 30, 85, 0.28), 0 8px 16px rgba(130, 30, 85, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      inset: 0;
+      overscroll-behavior: none;
+      overscroll-behavior-y: none;
+      touch-action: manipulation;
+      font-family: "Rounded Mplus 1c", "Nunito", "Quicksand", "Comic Sans MS", system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, #ffe5f4 0%, #f5e6ff 52%, #e0f7fa 100%);
+      color: var(--text-dark);
+    }
+
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top, 6px) 10px env(safe-area-inset-bottom, 8px) 10px;
+      overflow: hidden;
+    }
+
+    .bg-sparkles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg-star {
+      position: absolute;
+      font-size: 20px;
+      opacity: 0.45;
+      animation: floatStar 6s ease-in-out infinite;
+    }
+
+    @keyframes floatStar {
+      0%, 100% { transform: translateY(0) scale(0.95) rotate(0deg); }
+      50% { transform: translateY(-12px) scale(1.12) rotate(12deg); }
+    }
+
+    /* Top Navigation Bar */
+    .top-bar {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 2px;
+      flex-shrink: 0;
+    }
+
+    .nav-btn {
+      border: 3px solid #fff;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #ffffff 0%, #ffe6f2 100%);
+      color: var(--text-dark);
+      font-weight: 800;
+      font-size: 15px;
+      min-height: 50px;
+      padding: 6px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      box-shadow: 0 4px 0 rgba(160, 50, 110, 0.22), 0 6px 12px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .nav-btn:active {
+      transform: translateY(3px) scale(0.95);
+      box-shadow: 0 1px 0 rgba(160, 50, 110, 0.22);
+    }
+
+    .mode-pills {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .mode-pill {
+      flex: 1;
+      max-width: 148px;
+      border: 3px solid #fff;
+      border-radius: 999px;
+      min-height: 52px;
+      padding: 6px 10px;
+      font-size: 16px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.8);
+      color: #7c3a6b;
+      box-shadow: 0 4px 0 rgba(140, 50, 110, 0.18);
+      cursor: pointer;
+      transition: transform 0.1s ease, background 0.2s ease;
+    }
+
+    .mode-pill.active {
+      background: linear-gradient(180deg, #ff8ec7 0%, #ff5ca8 100%);
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(130, 15, 70, 0.45);
+      box-shadow: 0 5px 0 #c92a76, 0 8px 16px rgba(232, 62, 140, 0.32);
+      transform: scale(1.03);
+    }
+
+    .mode-pill:active {
+      transform: scale(0.95);
+    }
+
+    .icon-only-btn {
+      width: 52px;
+      padding: 0;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    /* Screens */
+    .screen {
+      position: relative;
+      z-index: 5;
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* SCREEN 1: PRINCESS SELECT */
+    .select-header {
+      text-align: center;
+      padding: 4px 0 8px 0;
+      flex-shrink: 0;
+    }
+
+    .select-title {
+      margin: 0;
+      font-size: clamp(24px, 6vw, 31px);
+      font-weight: 900;
+      color: #b5176e;
+      text-shadow: 0 2px 0 #fff, 0 4px 12px rgba(255, 105, 180, 0.25);
+      letter-spacing: 0.3px;
+    }
+
+    .princess-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 10px;
+      padding: 2px 2px 6px 2px;
+      min-height: 0;
+    }
+
+    .princess-card {
+      position: relative;
+      border: 4px solid #fff;
+      border-radius: 26px;
+      padding: 6px 6px 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-btn);
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.12s ease;
+    }
+
+    .princess-card:active {
+      transform: scale(0.94);
+    }
+
+    .princess-card-art {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+      animation: gentleBob 3.2s ease-in-out infinite;
+    }
+
+    .princess-card:nth-child(2) .princess-card-art { animation-delay: 0.4s; }
+    .princess-card:nth-child(3) .princess-card-art { animation-delay: 0.8s; }
+    .princess-card:nth-child(4) .princess-card-art { animation-delay: 1.2s; }
+    .princess-card:nth-child(5) .princess-card-art { animation-delay: 1.6s; }
+    .princess-card:nth-child(6) .princess-card-art { animation-delay: 2.0s; }
+
+    .princess-card-art svg {
+      height: 100%;
+      max-height: 135px;
+      width: auto;
+      overflow: visible;
+    }
+
+    .princess-card-label {
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text-dark);
+      font-size: 16px;
+      font-weight: 900;
+      padding: 4px 12px;
+      border-radius: 999px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      white-space: nowrap;
+    }
+
+    /* SCREEN 2: DRESS UP */
+    .dressup-stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      margin: 4px 0 8px 0;
+      border-radius: 30px;
+      border: 4px solid #fff;
+      background:
+        radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.92) 0%, rgba(255, 232, 246, 0.72) 55%, rgba(232, 214, 255, 0.82) 100%);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .castle-arch {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .pedestal {
+      position: absolute;
+      bottom: 10px;
+      width: 210px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, #fff5fa 0%, #ffc2e2 65%, #f48fb1 100%);
+      border: 3px solid #fff;
+      box-shadow: 0 8px 18px rgba(200, 60, 130, 0.25);
+    }
+
+    .princess-hero-wrap {
+      position: relative;
+      z-index: 3;
+      height: 85%;
+      max-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      animation: gentleBob 3s ease-in-out infinite;
+    }
+
+    .princess-hero-wrap svg {
+      height: 100%;
+      width: auto;
+      overflow: visible;
+      filter: drop-shadow(0 10px 14px rgba(95, 30, 75, 0.18));
+    }
+
+    .princess-hero-wrap.twirling {
+      animation: heroTwirl 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .princess-hero-wrap.pop-bounce {
+      animation: popBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes gentleBob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes heroTwirl {
+      0% { transform: scale(1) rotateY(0deg) translateY(0); }
+      40% { transform: scale(1.12) rotateY(180deg) translateY(-18px); }
+      100% { transform: scale(1) rotateY(360deg) translateY(0); }
+    }
+
+    @keyframes popBounce {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.11) translateY(-10px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+
+    /* Big Toddler Action Docks */
+    .action-dock {
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      padding: 2px 0 2px 0;
+    }
+
+    .action-dock.four-cols {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .big-toy-btn {
+      border: 3.5px solid #fff;
+      border-radius: 20px;
+      min-height: 66px;
+      padding: 5px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 13.5px;
+      text-shadow: 0 1.5px 2px rgba(80, 15, 50, 0.45);
+      box-shadow: var(--shadow-btn);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .action-dock.four-cols .big-toy-btn {
+      min-height: 76px;
+    }
+
+    .big-toy-btn:active {
+      transform: translateY(4px) scale(0.93);
+      box-shadow: 0 2px 0 rgba(120, 30, 80, 0.25);
+    }
+
+    .big-toy-btn .btn-emoji {
+      font-size: 29px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.18));
+    }
+
+    .big-toy-btn .btn-text {
+      line-height: 1.05;
+      text-align: center;
+    }
+
+    .btn-pink { background: linear-gradient(180deg, #ff85c0 0%, #f72585 100%); }
+    .btn-gold { background: linear-gradient(180deg, #ffd166 0%, #f77f00 100%); }
+    .btn-purple { background: linear-gradient(180deg, #c77dff 0%, #7b2cbf 100%); }
+    .btn-teal { background: linear-gradient(180deg, #4cc9f0 0%, #0096c7 100%); }
+    .btn-mint { background: linear-gradient(180deg, #52b788 0%, #2d6a4f 100%); }
+    .btn-rainbow {
+      background: linear-gradient(135deg, #ff6b9d 0%, #ffb703 35%, #4cc9f0 70%, #b5179e 100%);
+    }
+
+    /* SCREEN 3: TEA PARTY */
+    .teaparty-stage {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      margin: 4px 0 8px 0;
+      border-radius: 30px;
+      border: 4px solid #fff;
+      background: linear-gradient(180deg, #d8f3ff 0%, #fff0f8 55%, #d8f8e5 100%);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .garden-decor {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* 4-Character Seating Layout */
+    .party-row {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 4px 8px 0 8px;
+      height: 36%;
+    }
+
+    .party-row.bottom-row {
+      align-items: flex-start;
+      padding: 0 8px 6px 8px;
+      height: 36%;
+      z-index: 6;
+    }
+
+    .seat-slot {
+      position: relative;
+      width: 48%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .seat-char {
+      position: relative;
+      height: 86%;
+      max-height: 142px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: gentleBob 3.1s ease-in-out infinite;
+      transition: transform 0.15s ease;
+    }
+
+    .seat-slot:nth-child(2) .seat-char { animation-delay: 0.6s; }
+
+    .seat-char svg {
+      height: 100%;
+      width: auto;
+      overflow: visible;
+      filter: drop-shadow(0 5px 8px rgba(80, 25, 65, 0.18));
+    }
+
+    .seat-char.happy-react {
+      animation: popBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .seat-char.waving-hello {
+      animation: waveBodyBob 0.5s ease-in-out infinite alternate;
+    }
+
+    .wave-limb {
+      animation: handWave 0.32s ease-in-out infinite alternate;
+    }
+
+    @keyframes handWave {
+      0% { transform: rotate(-16deg); }
+      100% { transform: rotate(20deg); }
+    }
+
+    @keyframes waveBodyBob {
+      0% { transform: translateY(0) rotate(-3deg) scale(1.04); }
+      100% { transform: translateY(-6px) rotate(3deg) scale(1.06); }
+    }
+
+    .seat-char.sipping-tea {
+      animation: sipTilt 1.3s ease-in-out;
+    }
+
+    .seat-char.chewing-food {
+      animation: chewNibble 1.2s ease-in-out;
+    }
+
+    .seat-char.dancing-happy {
+      animation: happyDance 0.55s ease-in-out infinite;
+    }
+
+    @keyframes sipTilt {
+      0% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-6px) rotate(-6deg) scale(1.04); }
+      60% { transform: translateY(-8px) rotate(6deg) scale(1.05); }
+      100% { transform: translateY(0) rotate(0deg) scale(1); }
+    }
+
+    @keyframes chewNibble {
+      0% { transform: translateY(0) scale(1); }
+      22% { transform: translateY(-6px) scale(1.06); }
+      40% { transform: translateY(0px) scale(1.02); }
+      58% { transform: translateY(-6px) scale(1.06); }
+      76% { transform: translateY(0px) scale(1.02); }
+      100% { transform: translateY(0) scale(1); }
+    }
+
+    @keyframes happyDance {
+      0%, 100% { transform: translateY(0) rotate(-7deg) scale(1.03); }
+      25% { transform: translateY(-13px) rotate(0deg) scale(1.08); }
+      50% { transform: translateY(0) rotate(7deg) scale(1.03); }
+      75% { transform: translateY(-13px) rotate(0deg) scale(1.08); }
+    }
+
+    /* Single Teacup or Single Food Item Animated to Mouth */
+    .single-mouth-item {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      font-size: 34px;
+      z-index: 14;
+      pointer-events: none;
+      filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.24));
+    }
+
+    .single-mouth-item.drink-anim {
+      animation: singleDrinkLift 1.3s ease-in-out forwards;
+    }
+
+    .single-mouth-item.eat-anim {
+      animation: singleFoodBite 1.2s ease-in-out forwards;
+    }
+
+    @keyframes singleDrinkLift {
+      0% { transform: translate(-20%, 34px) scale(0.75) rotate(0deg); opacity: 0; }
+      22% { transform: translate(-35%, 2px) scale(1.15) rotate(-18deg); opacity: 1; }
+      72% { transform: translate(-40%, -4px) scale(1.15) rotate(-25deg); opacity: 1; }
+      100% { transform: translate(-25%, 16px) scale(0.4) rotate(0deg); opacity: 0; }
+    }
+
+    @keyframes singleFoodBite {
+      0% { transform: translate(-50%, 36px) scale(0.8); opacity: 0; }
+      20% { transform: translate(-50%, 2px) scale(1.2); opacity: 1; }
+      42% { transform: translate(-50%, -4px) scale(0.95); opacity: 1; }
+      62% { transform: translate(-50%, -2px) scale(0.72); opacity: 1; }
+      82% { transform: translate(-50%, -5px) scale(0.45); opacity: 0.9; }
+      100% { transform: translate(-50%, -8px) scale(0.1); opacity: 0; }
+    }
+
+    /* Larger Toddler-Friendly Guest Swap Buttons */
+    .guest-swap-pill {
+      position: absolute;
+      top: 2px;
+      right: 0;
+      z-index: 15;
+      border: 3px solid #fff;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #fff5b8 0%, #ffc300 100%);
+      color: #4a2000;
+      font-size: 15px;
+      font-weight: 900;
+      padding: 8px 14px;
+      min-height: 46px;
+      min-width: 90px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      box-shadow: 0 4px 0 rgba(160, 95, 5, 0.35), 0 6px 12px rgba(0,0,0,0.16);
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .bottom-row .guest-swap-pill {
+      top: auto;
+      bottom: 2px;
+    }
+
+    .guest-swap-pill:active {
+      transform: scale(0.92) translateY(2px);
+    }
+
+    .host-badge {
+      position: absolute;
+      top: 4px;
+      left: 2px;
+      z-index: 8;
+      background: rgba(255, 255, 255, 0.92);
+      border: 2.5px solid #ff85bc;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #b5176e;
+      pointer-events: none;
+    }
+
+    /* Royal Tea Table in Center */
+    .tea-table-wrap {
+      position: relative;
+      z-index: 5;
+      height: 29%;
+      min-height: 118px;
+      margin: -8px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tea-table {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      background: radial-gradient(ellipse at 50% 35%, #ffffff 0%, #ffe3f1 68%, #ffadd6 100%);
+      border: 4px solid #fff;
+      box-shadow: 0 8px 0 #f48fb1, 0 14px 24px rgba(140, 35, 95, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .table-center-item {
+      position: relative;
+      z-index: 9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .table-center-item:active {
+      transform: scale(0.9);
+    }
+
+    .platter-btn {
+      background: radial-gradient(circle at 35% 30%, #ffffff 0%, #f8edeb 80%, #e8d5d0 100%);
+      border: 2.5px solid #ffd166;
+      box-shadow: 0 4px 8px rgba(130, 40, 85, 0.16);
+      width: 72px;
+      height: 64px;
+      border-radius: 50%;
+    }
+
+    .platter-btn.nibbled {
+      animation: platterBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes platterBounce {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.2) translateY(-6px); }
+      100% { transform: scale(1); }
+    }
+
+    .teapot-center {
+      width: 76px;
+      height: 76px;
+    }
+
+    .teapot-center.pouring {
+      animation: pourTilt 0.9s ease-in-out;
+    }
+
+    @keyframes pourTilt {
+      0% { transform: translateY(0) rotate(0deg) scale(1); }
+      30% { transform: translateY(-18px) rotate(-28deg) scale(1.18); }
+      70% { transform: translateY(-18px) rotate(-28deg) scale(1.18); }
+      100% { transform: translateY(0) rotate(0deg) scale(1); }
+    }
+
+    /* 4 Place Settings on the Table */
+    .place-setting {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      z-index: 8;
+      cursor: pointer;
+      min-width: 44px;
+      min-height: 36px;
+      justify-content: center;
+    }
+
+    .place-0 { top: 4px; left: 9%; }
+    .place-1 { top: 4px; right: 9%; }
+    .place-2 { bottom: 4px; left: 9%; }
+    .place-3 { bottom: 4px; right: 9%; }
+
+    .teacup-icon, .treat-icon {
+      font-size: 29px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.16));
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+    }
+
+    .teacup-icon.filled {
+      animation: treatPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .teacup-icon.cleared {
+      transform: scale(0);
+      opacity: 0;
+    }
+
+    .treat-icon.pop-in {
+      animation: treatPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .treat-icon.consumed {
+      transform: scale(0.78);
+      opacity: 0.7;
+    }
+
+    @keyframes treatPop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+
+    /* Floating Celebration Particles */
+    #fx-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      overflow: hidden;
+    }
+
+    .fx-particle {
+      position: absolute;
+      font-size: 26px;
+      will-change: transform, opacity;
+      animation: particleBurst 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes particleBurst {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.4);
+      }
+      60% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.25) rotate(var(--rot));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="bg-sparkles" aria-hidden="true">
+      <span class="bg-star" style="top:8%; left:8%;">✨</span>
+      <span class="bg-star" style="top:14%; right:10%; animation-delay:1.1s;">💖</span>
+      <span class="bg-star" style="top:46%; left:4%; animation-delay:2.2s;">⭐</span>
+      <span class="bg-star" style="top:52%; right:6%; animation-delay:0.7s;">🌸</span>
+      <span class="bg-star" style="bottom:18%; left:12%; animation-delay:1.7s;">✨</span>
+      <span class="bg-star" style="bottom:22%; right:14%; animation-delay:2.8s;">🦋</span>
+    </div>
+
+    <!-- Top Bar -->
+    <header class="top-bar" id="top-bar" style="display:none;">
+      <button class="nav-btn" id="btn-back-princess" aria-label="Choose Princess">
+        <span>👑</span><span>Switch</span>
+      </button>
+      <div class="mode-pills">
+        <button class="mode-pill active" id="tab-dressup">
+          <span>👗</span><span>Dress Up</span>
+        </button>
+        <button class="mode-pill" id="tab-teaparty">
+          <span>🫖</span><span>Tea Party</span>
+        </button>
+      </div>
+      <button class="nav-btn icon-only-btn" id="btn-sound" aria-label="Toggle Music and Sound">🎵</button>
+    </header>
+
+    <!-- SCREEN 1: PRINCESS SELECT -->
+    <main class="screen active" id="screen-select">
+      <div class="select-header">
+        <h1 class="select-title">👑 Pick a Princess! ✨</h1>
+      </div>
+      <div class="princess-grid" id="princess-grid"></div>
+    </main>
+
+    <!-- SCREEN 2: PRINCESS DRESS UP -->
+    <section class="screen" id="screen-dressup">
+      <div class="dressup-stage" id="dressup-stage">
+        <svg class="castle-arch" viewBox="0 0 400 500" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="curtainGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#ff85bc" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#ffb3d9" stop-opacity="0.1"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,0 L95,0 Q70,220 0,340 Z" fill="url(#curtainGrad)"/>
+          <path d="M400,0 L305,0 Q330,220 400,340 Z" fill="url(#curtainGrad)"/>
+          <path d="M40,480 L40,140 Q200,15 360,140 L360,480" fill="none" stroke="#ffffff" stroke-width="6" stroke-dasharray="12 8" opacity="0.7"/>
+        </svg>
+        <div class="pedestal"></div>
+        <div class="princess-hero-wrap" id="hero-princess-wrap"></div>
+      </div>
+
+      <!-- 6 Big Toddler Dress-Up Buttons -->
+      <div class="action-dock">
+        <button class="big-toy-btn btn-pink" id="btn-dress">
+          <span class="btn-emoji">👗</span>
+          <span class="btn-text">Gown</span>
+        </button>
+        <button class="big-toy-btn btn-gold" id="btn-crown">
+          <span class="btn-emoji">👑</span>
+          <span class="btn-text">Tiara</span>
+        </button>
+        <button class="big-toy-btn btn-mint" id="btn-accessory">
+          <span class="btn-emoji">🧚</span>
+          <span class="btn-text">Wings & Acc</span>
+        </button>
+        <button class="big-toy-btn btn-purple" id="btn-wand">
+          <span class="btn-emoji">🪄</span>
+          <span class="btn-text">Magic</span>
+        </button>
+        <button class="big-toy-btn btn-teal" id="btn-aura">
+          <span class="btn-emoji">🦋</span>
+          <span class="btn-text">Sparkle</span>
+        </button>
+        <button class="big-toy-btn btn-rainbow" id="btn-twirl">
+          <span class="btn-emoji">💃</span>
+          <span class="btn-text">Twirl!</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: TEA PARTY (4 CHARACTERS) -->
+    <section class="screen" id="screen-teaparty">
+      <div class="teaparty-stage" id="teaparty-stage">
+        <svg class="garden-decor" viewBox="0 0 400 500" preserveAspectRatio="none">
+          <circle cx="55" cy="42" r="28" fill="#ffffff" opacity="0.65"/>
+          <circle cx="82" cy="46" r="22" fill="#ffffff" opacity="0.65"/>
+          <circle cx="335" cy="48" r="26" fill="#ffffff" opacity="0.65"/>
+          <path d="M0,450 Q100,415 200,445 Q300,415 400,450 L400,500 L0,500 Z" fill="#b7efc5" opacity="0.75"/>
+        </svg>
+
+        <!-- Top 2 Seats: Seat 0 (Host) & Seat 1 (Guest 1) -->
+        <div class="party-row top-row">
+          <div class="seat-slot" id="seat-0">
+            <span class="host-badge">👑 Host</span>
+            <div class="seat-char" id="seat-char-0"></div>
+          </div>
+          <div class="seat-slot" id="seat-1">
+            <button class="guest-swap-pill" data-seat="1">🐰 Swap</button>
+            <div class="seat-char" id="seat-char-1"></div>
+          </div>
+        </div>
+
+        <!-- Center Royal Tea Table -->
+        <div class="tea-table-wrap">
+          <div class="tea-table">
+            <div class="place-setting place-0" data-place="0">
+              <span class="teacup-icon cleared" id="cup-0"></span>
+              <span class="treat-icon" id="treat-0">🥪</span>
+            </div>
+            <div class="place-setting place-1" data-place="1">
+              <span class="treat-icon" id="treat-1">🍰</span>
+              <span class="teacup-icon cleared" id="cup-1"></span>
+            </div>
+
+            <!-- Left Platter: Cucumber Sandwiches -->
+            <div class="table-center-item platter-btn" id="platter-sandwiches" title="Eat Cucumber Sandwiches">
+              <svg viewBox="0 0 90 75" width="60" height="50">
+                <polygon points="18,46 44,18 68,46" fill="#fffdf7" stroke="#e6ccb2" stroke-width="2.5" stroke-linejoin="round"/>
+                <line x1="22" y1="42" x2="64" y2="42" stroke="#52b788" stroke-width="5.5" stroke-linecap="round"/>
+                <circle cx="34" cy="42" r="3" fill="#b7e4c7"/>
+                <circle cx="44" cy="42" r="3" fill="#b7e4c7"/>
+                <circle cx="54" cy="42" r="3" fill="#b7e4c7"/>
+                <polygon points="12,58 38,30 62,58" fill="#ffffff" stroke="#ddb892" stroke-width="2.5" stroke-linejoin="round"/>
+                <line x1="16" y1="53" x2="58" y2="53" stroke="#40916c" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="28" cy="53" r="3" fill="#95d5b2"/>
+                <circle cx="38" cy="53" r="3" fill="#95d5b2"/>
+                <circle cx="48" cy="53" r="3" fill="#95d5b2"/>
+              </svg>
+            </div>
+
+            <!-- Center Golden Teapot -->
+            <div class="table-center-item teapot-center" id="teapot-center" title="Pour Tea & Dance">
+              <svg viewBox="0 0 100 100" width="74" height="74">
+                <defs>
+                  <radialGradient id="potGold" cx="35%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#fff8d6"/>
+                    <stop offset="55%" stop-color="#ffd166"/>
+                    <stop offset="100%" stop-color="#f4a261"/>
+                  </radialGradient>
+                </defs>
+                <path d="M72,40 C92,35 92,68 70,66" fill="none" stroke="#f4a261" stroke-width="7" stroke-linecap="round"/>
+                <path d="M28,55 C12,50 10,34 18,30 C22,28 24,35 20,38 C17,41 20,46 30,47" fill="#ffd166" stroke="#e07a5f" stroke-width="2"/>
+                <ellipse cx="50" cy="56" rx="25" ry="22" fill="url(#potGold)" stroke="#fff" stroke-width="2.5"/>
+                <ellipse cx="50" cy="35" rx="15" ry="5" fill="#ff85bc" stroke="#fff" stroke-width="2"/>
+                <circle cx="50" cy="28" r="5" fill="#ffd166" stroke="#fff" stroke-width="2"/>
+                <path d="M50,64 C42,57 42,49 47,49 C49,49 50,51 50,52 C50,51 51,49 53,49 C58,49 58,57 50,64 Z" fill="#ff4d94"/>
+              </svg>
+            </div>
+
+            <!-- Right Platter: Strawberry Cake Dessert -->
+            <div class="table-center-item platter-btn" id="platter-dessert" title="Eat Royal Dessert">
+              <svg viewBox="0 0 90 75" width="60" height="50">
+                <rect x="20" y="38" width="50" height="22" rx="6" fill="#ff8fab" stroke="#fff" stroke-width="2"/>
+                <path d="M20,40 Q27,48 34,40 Q41,48 48,40 Q55,48 62,40 Q66,46 70,40 L70,36 L20,36 Z" fill="#ffffff"/>
+                <rect x="28" y="23" width="34" height="15" rx="5" fill="#ffc2d1" stroke="#fff" stroke-width="2"/>
+                <path d="M28,25 Q34,31 40,25 Q46,31 52,25 Q57,31 62,25 L62,22 L28,22 Z" fill="#ffffff"/>
+                <path d="M45,21 C39,16 39,10 45,10 C51,10 51,16 45,21 Z" fill="#e63946"/>
+                <path d="M41,11 L45,13 L49,11" fill="none" stroke="#40916c" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <div class="place-setting place-2" data-place="2">
+              <span class="teacup-icon cleared" id="cup-2"></span>
+              <span class="treat-icon" id="treat-2">🧁</span>
+            </div>
+            <div class="place-setting place-3" data-place="3">
+              <span class="treat-icon" id="treat-3">🥪</span>
+              <span class="teacup-icon cleared" id="cup-3"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom 2 Seats: Seat 2 (Guest 2) & Seat 3 (Guest 3) -->
+        <div class="party-row bottom-row">
+          <div class="seat-slot" id="seat-2">
+            <div class="seat-char" id="seat-char-2"></div>
+            <button class="guest-swap-pill" data-seat="2">🐱 Swap</button>
+          </div>
+          <div class="seat-slot" id="seat-3">
+            <div class="seat-char" id="seat-char-3"></div>
+            <button class="guest-swap-pill" data-seat="3">👑 Swap</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-dock four-cols">
+        <button class="big-toy-btn btn-teal" id="btn-tea-pour">
+          <span class="btn-emoji">🫖</span>
+          <span class="btn-text">Pour Tea</span>
+        </button>
+        <button class="big-toy-btn btn-mint" id="btn-tea-sandwich">
+          <span class="btn-emoji">🥪</span>
+          <span class="btn-text">Sandwiches</span>
+        </button>
+        <button class="big-toy-btn btn-pink" id="btn-tea-dessert">
+          <span class="btn-emoji">🍰</span>
+          <span class="btn-text">Dessert</span>
+        </button>
+        <button class="big-toy-btn btn-gold" id="btn-tea-dance">
+          <span class="btn-emoji">🎶</span>
+          <span class="btn-text">Dance!</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div id="fx-layer" aria-hidden="true"></div>
+
+  <script>
+    /* ============================================================
+       1. ANDROID PWA MANIFEST & TODDLER TOUCH GUARDRAILS
+       ============================================================ */
+    (function setupInlinePWA() {
+      const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ff85bc"/>
+            <stop offset="100%" stop-color="#9b5de5"/>
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+        <path d="M110,350 L140,180 L215,255 L256,145 L297,255 L372,180 L402,350 Z" fill="#ffd166" stroke="#fff" stroke-width="14" stroke-linejoin="round"/>
+        <rect x="110" y="345" width="292" height="42" rx="18" fill="#ffb703" stroke="#fff" stroke-width="12"/>
+        <circle cx="256" cy="275" r="22" fill="#ff4d94" stroke="#fff" stroke-width="8"/>
+        <circle cx="178" cy="295" r="15" fill="#4cc9f0" stroke="#fff" stroke-width="6"/>
+        <circle cx="334" cy="295" r="15" fill="#4cc9f0" stroke="#fff" stroke-width="6"/>
+      </svg>`;
+      const iconUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(iconSvg);
+      const manifest = {
+        name: "Princess Dress-Up & Tea Party",
+        short_name: "Princess Party",
+        start_url: ".",
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#ffe5f4",
+        theme_color: "#ff7eb3",
+        icons: [
+          { src: iconUrl, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+          { src: iconUrl, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+        ]
+      };
+      try {
+        const blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = URL.createObjectURL(blob);
+        document.head.appendChild(link);
+      } catch (e) {}
+    })();
+
+    // Disable pinch zoom, multi-touch, double-tap zoom, and pull-to-refresh
+    document.addEventListener("touchstart", (e) => {
+      if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener("gesturestart", (e) => e.preventDefault());
+    document.addEventListener("gesturechange", (e) => e.preventDefault());
+    document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+    /* ============================================================
+       2. PRINCESS MUSIC BOX, DRINKING, EATING & GREETING SOUNDS
+       ============================================================ */
+    let soundEnabled = true;
+    let audioCtx = null;
+    let bgmTimer = null;
+    let bgmStep = 0;
+
+    const WALTZ_NOTES = [
+      523.25, 659.25, 783.99, 659.25, 783.99, 1046.50,
+      987.77, 783.99, 659.25, 587.33, 659.25, 783.99,
+      698.46, 880.00, 1046.50, 880.00, 783.99, 659.25,
+      587.33, 493.88, 587.33, 523.25, 0, 0
+    ];
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
+      startPrincessMusic();
+    }
+
+    function startPrincessMusic() {
+      if (!soundEnabled || bgmTimer) return;
+      bgmTimer = setInterval(() => {
+        if (!soundEnabled || !audioCtx || audioCtx.state !== "running") return;
+        const freq = WALTZ_NOTES[bgmStep % WALTZ_NOTES.length];
+        bgmStep++;
+        if (!freq) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.028, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.52);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.55);
+      }, 420);
+    }
+
+    function stopPrincessMusic() {
+      if (bgmTimer) {
+        clearInterval(bgmTimer);
+        bgmTimer = null;
+      }
+    }
+
+    // Distinct Drinking Sound Effect ("sip-sip-gulp-ahhh")
+    function playDrinkSound() {
+      if (!soundEnabled) return;
+      ensureAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      const sips = [
+        { t: 0.00, f1: 260, f2: 540, dur: 0.22 },
+        { t: 0.30, f1: 300, f2: 600, dur: 0.22 },
+        { t: 0.60, f1: 340, f2: 680, dur: 0.24 }
+      ];
+
+      sips.forEach(({ t, f1, f2, dur }) => {
+        const osc = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        const gain = audioCtx.createGain();
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(f1, now + t);
+        osc.frequency.exponentialRampToValueAtTime(f2, now + t + dur);
+
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(750, now + t);
+        filter.Q.setValueAtTime(3.5, now + t);
+
+        gain.gain.setValueAtTime(0.001, now + t);
+        gain.gain.exponentialRampToValueAtTime(0.22, now + t + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + t + dur);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now + t);
+        osc.stop(now + t + dur + 0.02);
+      });
+
+      const bell = audioCtx.createOscillator();
+      const bellGain = audioCtx.createGain();
+      bell.type = "sine";
+      bell.frequency.setValueAtTime(880, now + 0.90);
+      bell.frequency.exponentialRampToValueAtTime(1174.66, now + 1.15);
+      bellGain.gain.setValueAtTime(0.001, now + 0.90);
+      bellGain.gain.exponentialRampToValueAtTime(0.14, now + 0.94);
+      bellGain.gain.exponentialRampToValueAtTime(0.001, now + 1.22);
+      bell.connect(bellGain);
+      bellGain.connect(audioCtx.destination);
+      bell.start(now + 0.90);
+      bell.stop(now + 1.24);
+    }
+
+    // Distinct Eating Sound Effect ("nom - nom - nom" crunch + chew)
+    function playEatSound() {
+      if (!soundEnabled) return;
+      ensureAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      const bites = [0.00, 0.30, 0.60];
+      bites.forEach((offset, idx) => {
+        const bufferSize = Math.floor(audioCtx.sampleRate * 0.065);
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.45));
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = noiseBuffer;
+
+        const bpf = audioCtx.createBiquadFilter();
+        bpf.type = "bandpass";
+        bpf.frequency.setValueAtTime(1100 + idx * 120, now + offset);
+        bpf.Q.setValueAtTime(2.2, now + offset);
+
+        const nGain = audioCtx.createGain();
+        nGain.gain.setValueAtTime(0.18, now + offset);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.065);
+
+        noise.connect(bpf);
+        bpf.connect(nGain);
+        nGain.connect(audioCtx.destination);
+        noise.start(now + offset);
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "triangle";
+        const basePitch = 360 + idx * 35;
+        osc.frequency.setValueAtTime(basePitch, now + offset + 0.03);
+        osc.frequency.exponentialRampToValueAtTime(basePitch * 0.68, now + offset + 0.21);
+
+        gain.gain.setValueAtTime(0.001, now + offset + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.19, now + offset + 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + offset + 0.03);
+        osc.stop(now + offset + 0.23);
+      });
+    }
+
+    function playChime(type = "sparkle") {
+      if (!soundEnabled) return;
+      ensureAudio();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      const sequences = {
+        sparkle: [523.25, 659.25, 783.99, 1046.5],
+        hello: [659.25, 880.00, 1046.50],
+        wings: [659.25, 880, 1046.5, 1318.51, 1567.98],
+        twirl: [523.25, 659.25, 783.99, 987.77, 1174.66, 1567.98],
+        pour: [392.00, 493.88, 587.33, 783.99, 987.77, 1174.66],
+        dance: [523.25, 659.25, 783.99, 1046.5, 880.00, 1046.5, 1318.51, 1567.98],
+        meow: [740, 920, 660],
+        hop: [420, 680, 540]
+      };
+      const notes = sequences[type] || sequences.sparkle;
+
+      notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = i % 2 === 0 ? "sine" : "triangle";
+        osc.frequency.setValueAtTime(freq, now + i * 0.065);
+        gain.gain.setValueAtTime(0.001, now + i * 0.065);
+        gain.gain.exponentialRampToValueAtTime(0.13, now + i * 0.065 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.065 + 0.34);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + i * 0.065);
+        osc.stop(now + i * 0.065 + 0.36);
+      });
+    }
+
+    /* ============================================================
+       3. PARTICLE CELEBRATION ENGINE
+       ============================================================ */
+    const fxLayer = document.getElementById("fx-layer");
+
+    function spawnParticles(x, y, emojis = ["✨", "💖", "⭐"], count = 12) {
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement("span");
+        el.className = "fx-particle";
+        el.textContent = emojis[i % emojis.length];
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+        const dist = 55 + Math.random() * 95;
+        el.style.left = x + "px";
+        el.style.top = y + "px";
+        el.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+        el.style.setProperty("--dy", (Math.sin(angle) * dist - 30) + "px");
+        el.style.setProperty("--rot", (Math.random() * 160 - 80) + "deg");
+        fxLayer.appendChild(el);
+        setTimeout(() => el.remove(), 1100);
+      }
+    }
+
+    function burstCenter(element, emojis, count = 14) {
+      const rect = element.getBoundingClientRect();
+      spawnParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, emojis, count);
+    }
+
+    /* ============================================================
+       4. PRINCESS, ACCESSORIES & ANIMAL SVG ART ENGINE
+       ============================================================ */
+    const PRINCESSES = [
+      {
+        id: "elsa",
+        name: "Ice Princess",
+        cardBg: "linear-gradient(180deg, #e0f7ff 0%, #9be3ff 100%)",
+        skin: "#ffe4d6",
+        cheek: "#ff9ebb",
+        eye: "#2b95d6",
+        hairMain: "#fff5cc",
+        hairShade: "#ebd488",
+        sigDress: { name: "Snowflake Gown", top: "#6ce0ff", skirt: "#9beeff", trim: "#ffffff", accent: "#c8f4ff", style: "ice" }
+      },
+      {
+        id: "rapunzel",
+        name: "Tower Princess",
+        cardBg: "linear-gradient(180deg, #f8e8ff 0%, #dfb8ff 100%)",
+        skin: "#ffe2cf",
+        cheek: "#ff99b8",
+        eye: "#3aa856",
+        hairMain: "#ffd94a",
+        hairShade: "#e5af18",
+        sigDress: { name: "Flower Gown", top: "#b565f2", skirt: "#ff7ac6", trim: "#ffe57f", accent: "#e2b0ff", style: "puff" }
+      },
+      {
+        id: "belle",
+        name: "Rose Princess",
+        cardBg: "linear-gradient(180deg, #fff8d6 0%, #ffe07d 100%)",
+        skin: "#f8d5bd",
+        cheek: "#f58ea8",
+        eye: "#8c5327",
+        hairMain: "#7b4322",
+        hairShade: "#542a12",
+        sigDress: { name: "Golden Ballgown", top: "#ffcf33", skirt: "#ffe066", trim: "#fff4b8", accent: "#ff4d6d", style: "offshoulder" }
+      },
+      {
+        id: "mulan",
+        name: "Blossom Princess",
+        cardBg: "linear-gradient(180deg, #e2fbf4 0%, #98ebd5 100%)",
+        skin: "#f7d4b8",
+        cheek: "#f28aa2",
+        eye: "#382218",
+        hairMain: "#242029",
+        hairShade: "#120f17",
+        sigDress: { name: "Lotus Silk Gown", top: "#38b2ac", skirt: "#f25c78", trim: "#ffd166", accent: "#d90429", style: "hanfu" }
+      },
+      {
+        id: "ariel",
+        name: "Ocean Princess",
+        cardBg: "linear-gradient(180deg, #e3f9f5 0%, #8ce8d8 100%)",
+        skin: "#ffe3d1",
+        cheek: "#ff94b2",
+        eye: "#1e96c8",
+        hairMain: "#e62e45",
+        hairShade: "#ad1529",
+        sigDress: { name: "Mermaid Gown", top: "#b57edc", skirt: "#2ec4b6", trim: "#cbf3f0", accent: "#ff9ebb", style: "mermaid" }
+      },
+      {
+        id: "cinderella",
+        name: "Crystal Princess",
+        cardBg: "linear-gradient(180deg, #ebf4ff 0%, #b5d6ff 100%)",
+        skin: "#ffe4d4",
+        cheek: "#ff9cb8",
+        eye: "#3b82f6",
+        hairMain: "#ffe066",
+        hairShade: "#e3b82b",
+        sigDress: { name: "Crystal Ballgown", top: "#60a5fa", skirt: "#93c5fd", trim: "#ffffff", accent: "#dbeafe", style: "peplum" }
+      }
+    ];
+
+    const BONUS_GOWNS = [
+      { name: "Rainbow Gown", top: "#ff6b9d", skirt: "#ffd166", trim: "#4cc9f0", accent: "#c77dff", style: "rainbow" },
+      { name: "Rose Petal Gown", top: "#ff4d8d", skirt: "#ff85b3", trim: "#ffe5f0", accent: "#fff", style: "offshoulder" },
+      { name: "Starlight Gown", top: "#7209b7", skirt: "#b5179e", trim: "#ffd166", accent: "#4cc9f0", style: "peplum" },
+      { name: "Fairy Mint Gown", top: "#2ec4b6", skirt: "#80ed99", trim: "#ffffff", accent: "#ffd166", style: "puff" },
+      { name: "Ruby Velvet Gown", top: "#d90429", skirt: "#ef233c", trim: "#ffd166", accent: "#fff", style: "offshoulder" }
+    ];
+
+    const TIARAS = [
+      { id: "none", name: "No Tiara" },
+      { id: "gold", name: "Royal Gold Tiara" },
+      { id: "ice", name: "Ice Crystal Crown" },
+      { id: "flower", name: "Flower Crown" },
+      { id: "star", name: "Starlight Tiara" },
+      { id: "butterfly", name: "Butterfly Crown" }
+    ];
+
+    const ACCESSORIES = [
+      { id: "none", name: "No Accessory" },
+      { id: "fairywings", name: "Fairy Wings" },
+      { id: "butterflywings", name: "Butterfly Wings" },
+      { id: "cape", name: "Sparkle Cape" },
+      { id: "purse", name: "Heart Purse & Bow" },
+      { id: "pearls", name: "Pearl Necklace" }
+    ];
+
+    const WANDS = [
+      { id: "none", name: "No Wand" },
+      { id: "star", name: "Star Wand" },
+      { id: "snow", name: "Snowflake Wand" },
+      { id: "rose", name: "Magic Rose" },
+      { id: "lantern", name: "Glowing Lantern" },
+      { id: "fan", name: "Royal Fan" }
+    ];
+
+    const AURAS = [
+      { id: "none", name: "No Sparkle" },
+      { id: "butterflies", name: "Butterflies" },
+      { id: "hearts", name: "Floating Hearts" },
+      { id: "stars", name: "Starlight Ring" },
+      { id: "snowflakes", name: "Magic Snowflakes" }
+    ];
+
+    function getPrincessById(id) {
+      return PRINCESSES.find(p => p.id === id) || PRINCESSES[0];
+    }
+
+    function renderPrincessSVG(princessId, outfit = {}, expression = "happy") {
+      const p = getPrincessById(princessId);
+      const dressIdx = outfit.dress || 0;
+      const gown = dressIdx === 0 ? p.sigDress : BONUS_GOWNS[(dressIdx - 1) % BONUS_GOWNS.length];
+      const tiara = TIARAS[outfit.tiara || 0].id;
+      const accessory = ACCESSORIES[outfit.accessory || 0].id;
+      const wand = WANDS[outfit.wand || 0].id;
+      const aura = AURAS[outfit.aura || 0].id;
+      const uid = princessId + "_" + Math.random().toString(36).slice(2, 7);
+
+      let backAccessorySvg = "";
+      if (accessory === "fairywings") {
+        backAccessorySvg = `
+          <defs>
+            <linearGradient id="fw_${uid}" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#fff0f9" stop-opacity="0.92"/>
+              <stop offset="50%" stop-color="#bceeff" stop-opacity="0.86"/>
+              <stop offset="100%" stop-color="#e5c2ff" stop-opacity="0.9"/>
+            </linearGradient>
+          </defs>
+          <g>
+            <path d="M96,154 C24,92 8,176 84,186 Z" fill="url(#fw_${uid})" stroke="#ffffff" stroke-width="3"/>
+            <path d="M104,154 C176,92 192,176 116,186 Z" fill="url(#fw_${uid})" stroke="#ffffff" stroke-width="3"/>
+            <path d="M92,182 C34,194 46,252 94,206 Z" fill="url(#fw_${uid})" stroke="#ffffff" stroke-width="2.5"/>
+            <path d="M108,182 C166,194 154,252 106,206 Z" fill="url(#fw_${uid})" stroke="#ffffff" stroke-width="2.5"/>
+            <circle cx="46" cy="146" r="3" fill="#ffffff"/>
+            <circle cx="154" cy="146" r="3" fill="#ffffff"/>
+            <circle cx="58" cy="212" r="2.5" fill="#ffd166"/>
+            <circle cx="142" cy="212" r="2.5" fill="#ffd166"/>
+          </g>`;
+      } else if (accessory === "butterflywings") {
+        backAccessorySvg = `
+          <g opacity="0.93">
+            <path d="M96,152 C18,95 12,185 86,188 Z" fill="#ff85c0" stroke="#ffd166" stroke-width="3"/>
+            <path d="M104,152 C182,95 188,185 114,188 Z" fill="#ff85c0" stroke="#ffd166" stroke-width="3"/>
+            <path d="M92,184 C30,196 42,256 95,208 Z" fill="#c77dff" stroke="#ffd166" stroke-width="2.5"/>
+            <path d="M108,184 C170,196 158,256 105,208 Z" fill="#c77dff" stroke="#ffd166" stroke-width="2.5"/>
+            <circle cx="44" cy="148" r="7" fill="#fff3b0"/>
+            <circle cx="156" cy="148" r="7" fill="#fff3b0"/>
+            <circle cx="58" cy="212" r="5" fill="#9beeff"/>
+            <circle cx="142" cy="212" r="5" fill="#9beeff"/>
+          </g>`;
+      } else if (accessory === "cape") {
+        backAccessorySvg = `
+          <path d="M72,138 L28,274 Q100,290 172,274 L128,138 Z" fill="#ff75b5" opacity="0.72" stroke="#ffd166" stroke-width="3"/>
+          <text x="42" y="254" font-size="14">✨</text>
+          <text x="142" y="254" font-size="14">✨</text>`;
+      }
+
+      let auraSvg = "";
+      if (aura === "butterflies") {
+        auraSvg = `
+          <g font-size="22">
+            <text x="16" y="130">🦋</text>
+            <text x="160" y="118">🦋</text>
+            <text x="20" y="225">✨</text>
+            <text x="162" y="218">🦋</text>
+          </g>`;
+      } else if (aura === "hearts") {
+        auraSvg = `
+          <g font-size="20">
+            <text x="18" y="122">💖</text>
+            <text x="160" y="132">💕</text>
+            <text x="22" y="218">💗</text>
+            <text x="158" y="222">💖</text>
+          </g>`;
+      } else if (aura === "stars") {
+        auraSvg = `
+          <g>
+            <ellipse cx="100" cy="185" rx="86" ry="96" fill="none" stroke="#ffd166" stroke-width="3" stroke-dasharray="8 10"/>
+            <text x="14" y="145" font-size="20">⭐</text>
+            <text x="164" y="155" font-size="20">🌟</text>
+            <text x="26" y="242" font-size="18">✨</text>
+          </g>`;
+      } else if (aura === "snowflakes") {
+        auraSvg = `
+          <g font-size="20">
+            <text x="16" y="124">❄️</text>
+            <text x="160" y="128">❄️</text>
+            <text x="22" y="222">✨</text>
+            <text x="158" y="218">❄️</text>
+          </g>`;
+      }
+
+      let backHair = "";
+      if (p.id === "elsa") {
+        backHair = `
+          <ellipse cx="100" cy="84" rx="46" ry="44" fill="${p.hairMain}"/>
+          <path d="M64,104 Q48,140 56,175 Q62,205 52,232 Q68,225 74,195 Q78,160 76,122 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2.5"/>
+          <circle cx="59" cy="142" r="8" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>
+          <circle cx="62" cy="162" r="8" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>
+          <circle cx="61" cy="182" r="7.5" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>
+          <circle cx="58" cy="202" r="6.5" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>
+          <text x="53" y="150" font-size="11">❄️</text>
+          <text x="54" y="190" font-size="11">❄️</text>`;
+      } else if (p.id === "rapunzel") {
+        backHair = `
+          <path d="M52,85 Q32,175 44,272 L156,272 Q168,175 148,85 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2.5"/>
+          <path d="M68,125 Q62,195 68,270 M132,125 Q138,195 132,270" fill="none" stroke="${p.hairShade}" stroke-width="2.5" opacity="0.6"/>
+          <text x="40" y="165" font-size="15">🌸</text>
+          <text x="142" y="185" font-size="15">🌼</text>
+          <text x="44" y="232" font-size="15">🌺</text>
+          <text x="138" y="242" font-size="15">🌸</text>`;
+      } else if (p.id === "belle") {
+        backHair = `
+          <circle cx="100" cy="40" r="23" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2.5"/>
+          <path d="M80,52 Q100,60 120,52" fill="none" stroke="#ffd166" stroke-width="5" stroke-linecap="round"/>
+          <path d="M56,95 Q42,155 58,205 Q100,218 142,205 Q158,155 144,95 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2.5"/>`;
+      } else if (p.id === "mulan") {
+        backHair = `
+          <path d="M55,86 Q44,155 56,218 L144,218 Q156,155 145,86 Z" fill="${p.hairMain}" stroke="#3f374a" stroke-width="2"/>`;
+      } else if (p.id === "ariel") {
+        backHair = `
+          <path d="M50,86 C26,130 34,195 54,235 Q100,245 146,235 C166,195 174,130 150,86 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2.5"/>`;
+      } else {
+        backHair = `
+          <circle cx="100" cy="42" r="22" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2.5"/>
+          <ellipse cx="100" cy="84" rx="44" ry="42" fill="${p.hairMain}"/>`;
+      }
+
+      const rainbowGrad = gown.style === "rainbow" ? `
+        <defs>
+          <linearGradient id="rb_${uid}" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#ff758f"/>
+            <stop offset="33%" stop-color="#ffd166"/>
+            <stop offset="66%" stop-color="#4cc9f0"/>
+            <stop offset="100%" stop-color="#c77dff"/>
+          </linearGradient>
+        </defs>` : "";
+      const skirtFill = gown.style === "rainbow" ? `url(#rb_${uid})` : gown.skirt;
+
+      let dressExtras = "";
+      if (gown.style === "ice") {
+        dressExtras = `<path d="M68,140 L34,268 L166,268 L132,140 Z" fill="#d8f8ff" opacity="0.5"/>`;
+      } else if (gown.style === "peplum") {
+        dressExtras = `
+          <path d="M76,174 Q54,186 64,208 Q82,205 96,184 Z" fill="#ffffff" opacity="0.9"/>
+          <path d="M124,174 Q146,186 136,208 Q118,205 104,184 Z" fill="#ffffff" opacity="0.9"/>`;
+      } else if (gown.style === "hanfu") {
+        dressExtras = `
+          <path d="M80,136 L104,168 L120,136" fill="none" stroke="${gown.trim}" stroke-width="4"/>
+          <rect x="75" y="164" width="50" height="14" rx="5" fill="${gown.accent}" stroke="${gown.trim}" stroke-width="2"/>`;
+      } else if (gown.style === "offshoulder") {
+        dressExtras = `
+          <path d="M64,142 Q100,156 136,142" fill="none" stroke="${gown.trim}" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="100" cy="148" r="6" fill="${gown.accent}"/>`;
+      } else if (gown.style === "mermaid") {
+        dressExtras = `
+          <path d="M78,142 Q90,154 100,144 Q110,154 122,142" fill="none" stroke="${gown.trim}" stroke-width="4"/>`;
+      }
+
+      let frontAccessorySvg = "";
+      if (accessory === "purse") {
+        frontAccessorySvg = `
+          <path d="M84,172 L100,179 L84,186 Z M116,172 L100,179 L116,186 Z" fill="#ff4d94" stroke="#fff" stroke-width="1.5"/>
+          <circle cx="100" cy="179" r="4" fill="#ffd166"/>
+          ${expression !== "wave" ? `
+            <path d="M52,196 Q58,186 64,196" fill="none" stroke="#ffd166" stroke-width="2.5"/>
+            <path d="M58,214 C46,203 46,193 53,193 C56,193 58,196 58,198 C58,196 60,193 63,193 C70,193 70,203 58,214 Z" fill="#ff4d94" stroke="#ffffff" stroke-width="2"/>` : ""}`;
+      } else if (accessory === "pearls") {
+        frontAccessorySvg = `
+          <path d="M84,132 Q100,147 116,132" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-dasharray="1 5" stroke-linecap="round"/>
+          <circle cx="100" cy="143" r="4.5" fill="#ff85bc" stroke="#ffffff" stroke-width="1.5"/>`;
+      } else if (accessory === "cape") {
+        frontAccessorySvg = `
+          <path d="M76,138 Q100,148 124,138" fill="none" stroke="#ffd166" stroke-width="4"/>
+          <circle cx="100" cy="143" r="5" fill="#ff4d94" stroke="#fff" stroke-width="1.5"/>`;
+      }
+
+      // Left arm either rests down or waves hello when expression === "wave"
+      const leftArmSvg = expression === "wave"
+        ? `<g class="wave-limb" style="transform-origin: 76px 144px;">
+             <path d="M76,144 Q52,126 42,96" fill="none" stroke="${p.skin}" stroke-width="11" stroke-linecap="round"/>
+             <circle cx="41" cy="93" r="6.5" fill="${p.skin}"/>
+           </g>`
+        : `<path d="M76,144 Q54,172 64,198" fill="none" stroke="${p.skin}" stroke-width="11" stroke-linecap="round"/>`;
+
+      const bodySvg = `
+        ${rainbowGrad}
+        <rect x="92" y="120" width="16" height="20" rx="6" fill="${p.skin}"/>
+        ${leftArmSvg}
+        <path d="M124,144 Q146,172 136,198" fill="none" stroke="${p.skin}" stroke-width="11" stroke-linecap="round"/>
+        ${dressExtras}
+        <path d="M77,172 L46,268 Q100,282 154,268 L123,172 Z" fill="${skirtFill}" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M62,222 Q100,235 138,222" fill="none" stroke="${gown.trim}" stroke-width="3" opacity="0.75"/>
+        <path d="M51,256 Q100,270 149,256" fill="none" stroke="${gown.trim}" stroke-width="4"/>
+        <path d="M75,138 Q100,148 125,138 L122,174 Q100,180 78,174 Z" fill="${gown.top}" stroke="#ffffff" stroke-width="2.5"/>
+        ${gown.style === "puff" ? `
+          <circle cx="71" cy="144" r="11" fill="${gown.top}" stroke="#fff" stroke-width="2"/>
+          <circle cx="129" cy="144" r="11" fill="${gown.top}" stroke="#fff" stroke-width="2"/>` : ""}
+        ${frontAccessorySvg}
+      `;
+
+      let mouthSvg = `<path d="M91,111 Q100,120 109,111" fill="none" stroke="#c93b6b" stroke-width="3.2" stroke-linecap="round"/>`;
+      let eyesSvg = `
+        <ellipse cx="83" cy="92" rx="8.5" ry="9.5" fill="#ffffff"/>
+        <circle cx="84" cy="92" r="6.2" fill="${p.eye}"/>
+        <circle cx="84" cy="92" r="3" fill="#1e152a"/>
+        <circle cx="81.5" cy="89" r="2.3" fill="#ffffff"/>
+        <circle cx="86.5" cy="94.5" r="1.1" fill="#ffffff"/>
+        <path d="M74,86 Q83,80 92,86" fill="none" stroke="#3b2335" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse cx="117" cy="92" rx="8.5" ry="9.5" fill="#ffffff"/>
+        <circle cx="116" cy="92" r="6.2" fill="${p.eye}"/>
+        <circle cx="116" cy="92" r="3" fill="#1e152a"/>
+        <circle cx="113.5" cy="89" r="2.3" fill="#ffffff"/>
+        <circle cx="118.5" cy="94.5" r="1.1" fill="#ffffff"/>
+        <path d="M108,86 Q117,80 126,86" fill="none" stroke="#3b2335" stroke-width="2.5" stroke-linecap="round"/>
+      `;
+
+      if (expression === "excited" || expression === "wave") {
+        mouthSvg = `
+          <path d="M89,109 Q100,124 111,109 Z" fill="#ff4d79" stroke="#b5175c" stroke-width="2"/>
+          <path d="M94,116 Q100,121 106,116" fill="#ff9ebb"/>`;
+      } else if (expression === "yummy") {
+        eyesSvg = `
+          <path d="M75,93 Q83,83 91,93" fill="none" stroke="#3b2335" stroke-width="3.2" stroke-linecap="round"/>
+          <path d="M109,93 Q117,83 125,93" fill="none" stroke="#3b2335" stroke-width="3.2" stroke-linecap="round"/>`;
+        mouthSvg = `<ellipse cx="100" cy="113" rx="6.5" ry="7" fill="#ff4d79" stroke="#b5175c" stroke-width="2"/>`;
+      }
+
+      const headSvg = `
+        <ellipse cx="100" cy="90" rx="37" ry="39" fill="${p.skin}" stroke="#f0bfa3" stroke-width="1.5"/>
+        <path d="M76,78 Q83,75 90,78" fill="none" stroke="${p.hairShade}" stroke-width="2.3" stroke-linecap="round"/>
+        <path d="M110,78 Q117,75 124,78" fill="none" stroke="${p.hairShade}" stroke-width="2.3" stroke-linecap="round"/>
+        ${eyesSvg}
+        <path d="M98,101 Q100,104 102,101" fill="none" stroke="#d99b7e" stroke-width="2.2" stroke-linecap="round"/>
+        <ellipse cx="73" cy="103" rx="7.5" ry="4.5" fill="${p.cheek}" opacity="0.55"/>
+        <ellipse cx="127" cy="103" rx="7.5" ry="4.5" fill="${p.cheek}" opacity="0.55"/>
+        ${mouthSvg}
+      `;
+
+      let frontHair = "";
+      if (p.id === "elsa") {
+        frontHair = `<path d="M62,86 C60,48 122,42 138,84 C122,64 84,65 62,86 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>`;
+      } else if (p.id === "rapunzel") {
+        frontHair = `<path d="M61,88 C62,48 98,48 100,66 C102,48 138,48 139,88 C126,68 108,68 100,72 C92,68 74,68 61,88 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>`;
+      } else if (p.id === "belle") {
+        frontHair = `<path d="M62,88 C62,50 98,50 100,68 C102,50 138,50 138,88 C124,68 106,68 100,72 C94,68 76,68 62,88 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>`;
+      } else if (p.id === "mulan") {
+        frontHair = `
+          <path d="M62,88 C62,48 138,48 138,88 C122,64 82,66 62,88 Z" fill="${p.hairMain}"/>
+          <g transform="translate(126, 62)">
+            <circle cx="0" cy="0" r="8" fill="#ff85bc" stroke="#fff" stroke-width="1.5"/>
+            <circle cx="0" cy="0" r="3" fill="#ffd166"/>
+          </g>`;
+      } else if (p.id === "ariel") {
+        frontHair = `
+          <path d="M61,88 C58,42 128,40 139,86 C122,64 84,65 61,88 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>
+          <text x="120" y="68" font-size="15">⭐</text>`;
+      } else {
+        frontHair = `
+          <path d="M62,86 C64,50 136,50 138,86 C120,66 80,66 62,86 Z" fill="${p.hairMain}" stroke="${p.hairShade}" stroke-width="2"/>
+          <path d="M68,66 Q100,54 132,66" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round"/>`;
+      }
+
+      let tiaraSvg = "";
+      if (tiara === "gold") {
+        tiaraSvg = `
+          <path d="M76,56 L82,36 L93,48 L100,30 L107,48 L118,36 L124,56 Z" fill="#ffd166" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="100" cy="46" r="3.5" fill="#ff4d94"/>`;
+      } else if (tiara === "ice") {
+        tiaraSvg = `
+          <path d="M76,56 L84,34 L93,48 L100,26 L107,48 L116,34 L124,56 Z" fill="#9beeff" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="100" cy="44" r="4" fill="#ffffff"/>`;
+      } else if (tiara === "flower") {
+        tiaraSvg = `
+          <g font-size="16">
+            <text x="72" y="58">🌸</text>
+            <text x="91" y="54">🌺</text>
+            <text x="110" y="58">🌼</text>
+          </g>`;
+      } else if (tiara === "star") {
+        tiaraSvg = `
+          <path d="M78,56 Q100,46 122,56" fill="none" stroke="#e2e8f0" stroke-width="4"/>
+          <text x="89" y="48" font-size="22">⭐</text>`;
+      } else if (tiara === "butterfly") {
+        tiaraSvg = `<text x="86" y="49" font-size="25">🦋</text>`;
+      }
+
+      let wandSvg = "";
+      if (wand === "star") {
+        wandSvg = `
+          <line x1="138" y1="205" x2="162" y2="142" stroke="#ffd166" stroke-width="5" stroke-linecap="round"/>
+          <text x="147" y="148" font-size="26">⭐</text>`;
+      } else if (wand === "snow") {
+        wandSvg = `
+          <line x1="138" y1="205" x2="162" y2="142" stroke="#9beeff" stroke-width="5" stroke-linecap="round"/>
+          <text x="147" y="148" font-size="26">❄️</text>`;
+      } else if (wand === "rose") {
+        wandSvg = `
+          <line x1="138" y1="205" x2="158" y2="152" stroke="#52b788" stroke-width="5" stroke-linecap="round"/>
+          <text x="145" y="156" font-size="25">🌹</text>`;
+      } else if (wand === "lantern") {
+        wandSvg = `
+          <line x1="138" y1="196" x2="158" y2="176" stroke="#ffd166" stroke-width="3"/>
+          <text x="146" y="182" font-size="26">🏮</text>`;
+      } else if (wand === "fan") {
+        wandSvg = `<text x="134" y="196" font-size="28">🪭</text>`;
+      }
+
+      return `
+        <svg viewBox="0 0 200 285" xmlns="http://www.w3.org/2000/svg">
+          ${backAccessorySvg}
+          ${auraSvg}
+          ${backHair}
+          ${bodySvg}
+          ${headSvg}
+          ${frontHair}
+          ${tiaraSvg}
+          ${wandSvg}
+        </svg>`;
+    }
+
+    function renderAnimalSVG(animalType, expression = "happy") {
+      if (animalType === "bunny") {
+        const mouth = expression === "yummy" || expression === "wave"
+          ? `<circle cx="100" cy="176" r="6" fill="#ff7aa8"/>`
+          : `<path d="M92,173 Q96,179 100,173 Q104,179 108,173" fill="none" stroke="#b55d7c" stroke-width="2.6" stroke-linecap="round"/>`;
+        const eyes = expression === "yummy"
+          ? `<path d="M76,152 Q84,142 92,152" fill="none" stroke="#4a2c40" stroke-width="3.2" stroke-linecap="round"/>
+             <path d="M108,152 Q116,142 124,152" fill="none" stroke="#4a2c40" stroke-width="3.2" stroke-linecap="round"/>`
+          : `<circle cx="84" cy="151" r="8" fill="#5e4ae3"/>
+             <circle cx="84" cy="151" r="4" fill="#1e152a"/>
+             <circle cx="81.5" cy="148.5" r="2.6" fill="#fff"/>
+             <circle cx="116" cy="151" r="8" fill="#5e4ae3"/>
+             <circle cx="116" cy="151" r="4" fill="#1e152a"/>
+             <circle cx="113.5" cy="148.5" r="2.6" fill="#fff"/>`;
+
+        const leftPaw = expression === "wave"
+          ? `<g class="wave-limb" style="transform-origin: 76px 206px;">
+               <ellipse cx="46" cy="170" rx="12" ry="11" fill="#ffffff" stroke="#e5dce8" stroke-width="2.8"/>
+               <circle cx="46" cy="171" r="5" fill="#ffb3d1"/>
+             </g>`
+          : `<ellipse cx="72" cy="216" rx="11" ry="9" fill="#ffffff" stroke="#e5dce8" stroke-width="2.5"/>`;
+
+        return `
+          <svg viewBox="0 0 200 265" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="78" cy="76" rx="15" ry="48" transform="rotate(-10 78 76)" fill="#ffffff" stroke="#e5dce8" stroke-width="3"/>
+            <ellipse cx="78" cy="78" rx="8" ry="34" transform="rotate(-10 78 78)" fill="#ffb3d1"/>
+            <ellipse cx="122" cy="76" rx="15" ry="48" transform="rotate(12 122 76)" fill="#ffffff" stroke="#e5dce8" stroke-width="3"/>
+            <ellipse cx="122" cy="78" rx="8" ry="34" transform="rotate(12 122 78)" fill="#ffb3d1"/>
+            <ellipse cx="100" cy="218" rx="36" ry="38" fill="#ffffff" stroke="#e5dce8" stroke-width="3"/>
+            <ellipse cx="100" cy="222" rx="22" ry="25" fill="#fff0f6"/>
+            <path d="M85,189 L100,196 L85,203 Z M115,189 L100,196 L115,203 Z" fill="#ff6b9d"/>
+            <circle cx="100" cy="196" r="4.5" fill="#ffd166"/>
+            ${leftPaw}
+            <ellipse cx="128" cy="216" rx="11" ry="9" fill="#ffffff" stroke="#e5dce8" stroke-width="2.5"/>
+            <ellipse cx="100" cy="152" rx="44" ry="38" fill="#ffffff" stroke="#e5dce8" stroke-width="3"/>
+            ${eyes}
+            <polygon points="95,163 105,163 100,169" fill="#ff7aa8"/>
+            <ellipse cx="72" cy="164" rx="8" ry="5" fill="#ffb3d1" opacity="0.7"/>
+            <ellipse cx="128" cy="164" rx="8" ry="5" fill="#ffb3d1" opacity="0.7"/>
+            ${mouth}
+          </svg>`;
+      }
+
+      const mouth = expression === "yummy" || expression === "wave"
+        ? `<circle cx="100" cy="176" r="6" fill="#ff7aa8"/>`
+        : `<path d="M92,172 Q96,178 100,172 Q104,178 108,172" fill="none" stroke="#b55d7c" stroke-width="2.6" stroke-linecap="round"/>`;
+      const eyes = expression === "yummy"
+        ? `<path d="M76,152 Q84,142 92,152" fill="none" stroke="#4a2c40" stroke-width="3.2" stroke-linecap="round"/>
+           <path d="M108,152 Q116,142 124,152" fill="none" stroke="#4a2c40" stroke-width="3.2" stroke-linecap="round"/>`
+        : `<circle cx="84" cy="151" r="8.5" fill="#00bbf9"/>
+           <circle cx="84" cy="151" r="4.2" fill="#1e152a"/>
+           <circle cx="81.5" cy="148.5" r="2.7" fill="#fff"/>
+           <circle cx="116" cy="151" r="8.5" fill="#00bbf9"/>
+           <circle cx="116" cy="151" r="4.2" fill="#1e152a"/>
+           <circle cx="113.5" cy="148.5" r="2.7" fill="#fff"/>`;
+
+      const leftPaw = expression === "wave"
+        ? `<g class="wave-limb" style="transform-origin: 76px 206px;">
+             <ellipse cx="46" cy="170" rx="11" ry="10.5" fill="#ffffff" stroke="#e5dce8" stroke-width="2.8"/>
+             <circle cx="46" cy="171" r="4.5" fill="#ffb3d1"/>
+           </g>`
+        : `<ellipse cx="74" cy="218" rx="10" ry="9" fill="#ffffff" stroke="#e5dce8" stroke-width="2.5"/>`;
+
+      return `
+        <svg viewBox="0 0 200 265" xmlns="http://www.w3.org/2000/svg">
+          <path d="M132,235 Q168,220 158,190 Q152,176 142,188" fill="none" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+          <ellipse cx="100" cy="218" rx="35" ry="37" fill="#ffffff" stroke="#e5dce8" stroke-width="3"/>
+          <path d="M74,190 Q100,200 126,190" fill="none" stroke="#ff6b9d" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="100" cy="197" r="6" fill="#ffd166" stroke="#fff" stroke-width="1.5"/>
+          ${leftPaw}
+          <ellipse cx="126" cy="218" rx="10" ry="9" fill="#ffffff" stroke="#e5dce8" stroke-width="2.5"/>
+          <polygon points="62,135 66,94 94,120" fill="#ffffff" stroke="#e5dce8" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="68,128 70,103 88,120" fill="#ffb3d1"/>
+          <polygon points="138,135 134,94 106,120" fill="#ffffff" stroke="#e5dce8" stroke-width="3" stroke-linejoin="round"/>
+          <polygon points="132,128 130,103 112,120" fill="#ffb3d1"/>
+          <path d="M84,116 L89,101 L96,110 L100,97 L104,110 L111,101 L116,116 Z" fill="#ffd166" stroke="#fff" stroke-width="1.8"/>
+          <ellipse cx="100" cy="153" rx="43" ry="37" fill="#ffffff" stroke="#e5dce8" stroke-width="3"/>
+          ${eyes}
+          <line x1="50" y1="154" x2="68" y2="157" stroke="#cbb8d1" stroke-width="2" stroke-linecap="round"/>
+          <line x1="50" y1="164" x2="68" y2="163" stroke="#cbb8d1" stroke-width="2" stroke-linecap="round"/>
+          <line x1="150" y1="154" x2="132" y2="157" stroke="#cbb8d1" stroke-width="2" stroke-linecap="round"/>
+          <line x1="150" y1="164" x2="132" y2="163" stroke="#cbb8d1" stroke-width="2" stroke-linecap="round"/>
+          <polygon points="96,163 104,163 100,168" fill="#ff7aa8"/>
+          <ellipse cx="72" cy="164" rx="7.5" ry="4.5" fill="#ffb3d1" opacity="0.7"/>
+          <ellipse cx="128" cy="164" rx="7.5" ry="4.5" fill="#ffb3d1" opacity="0.7"/>
+          ${mouth}
+        </svg>`;
+    }
+
+    /* ============================================================
+       5. GAME STATE & RENDERING
+       ============================================================ */
+    const state = {
+      screen: "select",
+      selectedPrincess: "elsa",
+      outfit: { dress: 0, tiara: 0, accessory: 0, wand: 0, aura: 0 },
+      guests: [
+        { type: "animal", id: "bunny" },
+        { type: "animal", id: "kitten" },
+        { type: "princess", id: "rapunzel" }
+      ],
+      tableFood: ["🥪", "🍰", "🧁", "🥪"],
+      foodConsumed: [false, false, false, false],
+      teaPoured: [false, false, false, false]
+    };
+
+    const topBar = document.getElementById("top-bar");
+    const screens = {
+      select: document.getElementById("screen-select"),
+      dressup: document.getElementById("screen-dressup"),
+      teaparty: document.getElementById("screen-teaparty")
+    };
+
+    function switchScreen(target) {
+      clearTeaTimers();
+      state.screen = target;
+      Object.entries(screens).forEach(([key, el]) => {
+        el.classList.toggle("active", key === target);
+      });
+      topBar.style.display = target === "select" ? "none" : "flex";
+      document.getElementById("tab-dressup").classList.toggle("active", target === "dressup");
+      document.getElementById("tab-teaparty").classList.toggle("active", target === "teaparty");
+
+      if (target === "dressup") renderDressUpHero();
+      if (target === "teaparty") {
+        ensureValidDefaultFriend();
+        renderTeaParty();
+      }
+    }
+
+    function buildSelectGrid() {
+      const grid = document.getElementById("princess-grid");
+      grid.innerHTML = "";
+      PRINCESSES.forEach((p) => {
+        const card = document.createElement("button");
+        card.className = "princess-card";
+        card.style.background = p.cardBg;
+        card.innerHTML = `
+          <div class="princess-card-art">${renderPrincessSVG(p.id, { dress: 0, tiara: 0, accessory: 0, wand: 0, aura: 0 }, "happy")}</div>
+          <div class="princess-card-label">${p.name}</div>
+        `;
+        card.addEventListener("click", () => {
+          state.selectedPrincess = p.id;
+          state.outfit = { dress: 0, tiara: 0, accessory: 0, wand: 0, aura: 0 };
+          playChime("sparkle");
+          burstCenter(card, ["✨", "💖", "👑"], 14);
+          switchScreen("dressup");
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    // Dress-Up Hero Rendering & Animations
+    const heroWrap = document.getElementById("hero-princess-wrap");
+
+    function renderDressUpHero(expression = "happy", animClass = "pop-bounce") {
+      heroWrap.innerHTML = renderPrincessSVG(state.selectedPrincess, state.outfit, expression);
+      heroWrap.classList.remove("twirling", "pop-bounce");
+      void heroWrap.offsetWidth;
+      if (animClass) heroWrap.classList.add(animClass);
+    }
+
+    heroWrap.addEventListener("click", () => {
+      playChime("twirl");
+      renderDressUpHero("excited", "twirling");
+      burstCenter(heroWrap, ["💖", "✨", "🌸", "👑"], 18);
+    });
+
+    document.getElementById("btn-dress").addEventListener("click", () => {
+      const totalGowns = 1 + BONUS_GOWNS.length;
+      state.outfit.dress = (state.outfit.dress + 1) % totalGowns;
+      playChime("sparkle");
+      renderDressUpHero("excited", "pop-bounce");
+      burstCenter(heroWrap, ["👗", "✨", "💖"], 14);
+    });
+
+    document.getElementById("btn-crown").addEventListener("click", () => {
+      state.outfit.tiara = (state.outfit.tiara + 1) % TIARAS.length;
+      playChime("sparkle");
+      renderDressUpHero("excited", "pop-bounce");
+      burstCenter(heroWrap, ["👑", "✨", "💎"], 14);
+    });
+
+    document.getElementById("btn-accessory").addEventListener("click", () => {
+      state.outfit.accessory = (state.outfit.accessory + 1) % ACCESSORIES.length;
+      playChime("wings");
+      renderDressUpHero("excited", "pop-bounce");
+      burstCenter(heroWrap, ["🧚", "🦋", "💖", "✨"], 16);
+    });
+
+    document.getElementById("btn-wand").addEventListener("click", () => {
+      state.outfit.wand = (state.outfit.wand + 1) % WANDS.length;
+      playChime("sparkle");
+      renderDressUpHero("excited", "pop-bounce");
+      burstCenter(heroWrap, ["🪄", "⭐", "✨"], 14);
+    });
+
+    document.getElementById("btn-aura").addEventListener("click", () => {
+      state.outfit.aura = (state.outfit.aura + 1) % AURAS.length;
+      playChime("sparkle");
+      renderDressUpHero("excited", "pop-bounce");
+      burstCenter(heroWrap, ["🦋", "💖", "✨"], 14);
+    });
+
+    document.getElementById("btn-twirl").addEventListener("click", () => {
+      playChime("twirl");
+      renderDressUpHero("excited", "twirling");
+      burstCenter(heroWrap, ["✨", "💖", "👑", "🌸", "⭐"], 22);
+    });
+
+    /* ============================================================
+       6. TEA PARTY: WAVE GREETING, DRINKING & CLEARING CUPS, EATING
+       ============================================================ */
+    let teaSequenceTimers = [];
+
+    function clearTeaTimers() {
+      teaSequenceTimers.forEach(t => clearTimeout(t));
+      teaSequenceTimers = [];
+      for (let i = 0; i < 4; i++) {
+        const charEl = document.getElementById(`seat-char-${i}`);
+        if (charEl) {
+          charEl.classList.remove("sipping-tea", "chewing-food", "dancing-happy", "happy-react", "waving-hello");
+          charEl.querySelectorAll(".single-mouth-item").forEach(el => el.remove());
+        }
+      }
+    }
+
+    function getGuestCyclePool() {
+      const pool = [
+        { type: "animal", id: "bunny", emoji: "🐰" },
+        { type: "animal", id: "kitten", emoji: "🐱" }
+      ];
+      PRINCESSES.forEach((p) => {
+        if (p.id !== state.selectedPrincess) {
+          pool.push({ type: "princess", id: p.id, emoji: "👑" });
+        }
+      });
+      return pool;
+    }
+
+    function ensureValidDefaultFriend() {
+      const g3 = state.guests[2];
+      if (g3.type === "princess" && g3.id === state.selectedPrincess) {
+        const alt = PRINCESSES.find(p => p.id !== state.selectedPrincess);
+        state.guests[2] = { type: "princess", id: alt.id };
+      }
+    }
+
+    function renderSeatCharacter(seatIndex, expression = "happy") {
+      const container = document.getElementById(`seat-char-${seatIndex}`);
+      if (!container) return;
+      if (seatIndex === 0) {
+        container.innerHTML = renderPrincessSVG(state.selectedPrincess, state.outfit, expression);
+      } else {
+        const g = state.guests[seatIndex - 1];
+        if (g.type === "animal") {
+          container.innerHTML = renderAnimalSVG(g.id, expression);
+        } else {
+          container.innerHTML = renderPrincessSVG(g.id, { dress: 0, tiara: 1, accessory: 0, wand: 0, aura: 0 }, expression);
+        }
+      }
+    }
+
+    function renderTeaParty() {
+      for (let i = 0; i < 4; i++) {
+        renderSeatCharacter(i, "happy");
+        const cup = document.getElementById(`cup-${i}`);
+        const treat = document.getElementById(`treat-${i}`);
+
+        if (state.teaPoured[i]) {
+          cup.textContent = "🍵";
+          cup.classList.remove("cleared");
+          cup.classList.add("filled");
+        } else {
+          cup.textContent = "";
+          cup.classList.remove("filled");
+          cup.classList.add("cleared");
+        }
+
+        treat.textContent = state.foodConsumed[i] ? "🍽️" : state.tableFood[i];
+        treat.classList.toggle("consumed", state.foodConsumed[i]);
+      }
+
+      document.querySelectorAll(".guest-swap-pill").forEach((btn) => {
+        const seatIdx = Number(btn.dataset.seat);
+        const g = state.guests[seatIdx - 1];
+        const icon = g.id === "bunny" ? "🐰" : g.id === "kitten" ? "🐱" : "👑";
+        btn.innerHTML = `<span>${icon}</span><span>Swap</span>`;
+      });
+    }
+
+    // Guest Swap Buttons
+    document.querySelectorAll(".guest-swap-pill").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearTeaTimers();
+        const seatIdx = Number(btn.dataset.seat);
+        const pool = getGuestCyclePool();
+        const current = state.guests[seatIdx - 1];
+        const curIdx = pool.findIndex(item => item.type === current.type && item.id === current.id);
+        const next = pool[(curIdx + 1) % pool.length];
+        state.guests[seatIdx - 1] = { type: next.type, id: next.id };
+
+        renderTeaParty();
+        const charEl = document.getElementById(`seat-char-${seatIdx}`);
+        charEl.classList.remove("happy-react");
+        void charEl.offsetWidth;
+        charEl.classList.add("happy-react");
+
+        if (next.id === "kitten") playChime("meow");
+        else if (next.id === "bunny") playChime("hop");
+        else playChime("sparkle");
+
+        burstCenter(charEl, [next.emoji, "✨", "💖"], 12);
+      });
+    });
+
+    // Helper: Animate 1 single food/drink item going to a character's mouth
+    function animateSingleMouthItem(seatIndex, emoji, mode = "eat") {
+      const charEl = document.getElementById(`seat-char-${seatIndex}`);
+      if (!charEl) return;
+      renderSeatCharacter(seatIndex, "yummy");
+      charEl.classList.remove("sipping-tea", "chewing-food", "dancing-happy", "happy-react", "waving-hello");
+      void charEl.offsetWidth;
+      charEl.classList.add(mode === "drink" ? "sipping-tea" : "chewing-food");
+
+      const itemEl = document.createElement("span");
+      itemEl.className = `single-mouth-item ${mode === "drink" ? "drink-anim" : "eat-anim"}`;
+      itemEl.textContent = emoji;
+      charEl.appendChild(itemEl);
+    }
+
+    // Happy Dance Helper for selected seats (defaults to all 4 seats)
+    function triggerHappyDanceForSeats(seatIndices = [0, 1, 2, 3], durationMs = 2200) {
+      playChime("dance");
+      seatIndices.forEach((i) => {
+        renderSeatCharacter(i, "excited");
+        const charEl = document.getElementById(`seat-char-${i}`);
+        if (!charEl) return;
+        charEl.querySelectorAll(".single-mouth-item").forEach(el => el.remove());
+        charEl.classList.remove("sipping-tea", "chewing-food", "happy-react", "waving-hello");
+        charEl.classList.add("dancing-happy");
+      });
+
+      const endDance = setTimeout(() => {
+        seatIndices.forEach((i) => {
+          const charEl = document.getElementById(`seat-char-${i}`);
+          if (charEl) charEl.classList.remove("dancing-happy");
+          renderSeatCharacter(i, "happy");
+        });
+      }, durationMs);
+      teaSequenceTimers.push(endDance);
+    }
+
+    // Tapping a character makes them WAVE HELLO, then the REST of the characters dance happy!
+    function greetGuestThenOthersDance(seatIndex) {
+      clearTeaTimers();
+      renderTeaParty();
+
+      // Clicked guest waves hello
+      renderSeatCharacter(seatIndex, "wave");
+      const waverEl = document.getElementById(`seat-char-${seatIndex}`);
+      if (waverEl) waverEl.classList.add("waving-hello");
+
+      if (seatIndex > 0 && state.guests[seatIndex - 1].id === "kitten") playChime("meow");
+      else if (seatIndex > 0 && state.guests[seatIndex - 1].id === "bunny") playChime("hop");
+      else playChime("hello");
+
+      // After waving, the REST of the characters dance happy
+      const othersDanceTimer = setTimeout(() => {
+        if (waverEl) waverEl.classList.remove("waving-hello");
+        renderSeatCharacter(seatIndex, "happy");
+        const otherSeats = [0, 1, 2, 3].filter(idx => idx !== seatIndex);
+        triggerHappyDanceForSeats(otherSeats, 2100);
+      }, 950);
+
+      teaSequenceTimers.push(othersDanceTimer);
+    }
+
+    for (let i = 0; i < 4; i++) {
+      document.getElementById(`seat-char-${i}`).addEventListener("click", () => {
+        greetGuestThenOthersDance(i);
+      });
+    }
+
+    // Tapping a food item directly on a place setting lets that guest eat 1 snack, then all dance happy
+    function feedSingleGuestThenAllDance(seatIndex) {
+      clearTeaTimers();
+      const snack = state.tableFood[seatIndex] || "🧁";
+      state.foodConsumed[seatIndex] = true;
+      renderTeaParty();
+
+      playEatSound();
+      animateSingleMouthItem(seatIndex, snack, "eat");
+
+      const danceTimer = setTimeout(() => {
+        triggerHappyDanceForSeats([0, 1, 2, 3], 2100);
+      }, 1250);
+      teaSequenceTimers.push(danceTimer);
+    }
+
+    document.querySelectorAll(".place-setting").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const idx = Number(el.dataset.place);
+        feedSingleGuestThenAllDance(idx);
+      });
+    });
+
+    // Teapot Click:
+    // 1) Pour Tea onto table -> 2) Guests pick up & drink tea (clearing cups from table) -> 3) ALL dance happy!
+    function triggerPourDrinkAndDance() {
+      clearTeaTimers();
+      const pot = document.getElementById("teapot-center");
+      pot.classList.remove("pouring");
+      void pot.offsetWidth;
+      pot.classList.add("pouring");
+
+      playChime("pour");
+      state.teaPoured = [true, true, true, true];
+      renderTeaParty();
+
+      // Phase 2: All 4 guests pick up their cup to drink (clearing the teacups off the table)
+      const sipTimer = setTimeout(() => {
+        state.teaPoured = [false, false, false, false];
+        renderTeaParty();
+        playDrinkSound();
+        for (let i = 0; i < 4; i++) {
+          animateSingleMouthItem(i, "🍵", "drink");
+        }
+      }, 750);
+
+      // Phase 3: All 4 guests dance happy with the table cleared of teacups
+      const danceTimer = setTimeout(() => {
+        triggerHappyDanceForSeats([0, 1, 2, 3], 2300);
+      }, 2100);
+
+      teaSequenceTimers.push(sipTimer, danceTimer);
+    }
+
+    document.getElementById("teapot-center").addEventListener("click", triggerPourDrinkAndDance);
+    document.getElementById("btn-tea-pour").addEventListener("click", triggerPourDrinkAndDance);
+
+    // Sandwiches / Dessert Click:
+    // 1) Serve snack -> 2) Each guest eats 1 single food item -> 3) ALL guests dance happy!
+    function serveAndConsumeSnack(snackEmoji, platterId) {
+      clearTeaTimers();
+      const platter = document.getElementById(platterId);
+      if (platter) {
+        platter.classList.remove("nibbled");
+        void platter.offsetWidth;
+        platter.classList.add("nibbled");
+      }
+
+      state.tableFood = [snackEmoji, snackEmoji, snackEmoji, snackEmoji];
+      state.foodConsumed = [false, false, false, false];
+      renderTeaParty();
+
+      for (let i = 0; i < 4; i++) {
+        const treatEl = document.getElementById(`treat-${i}`);
+        treatEl.classList.remove("pop-in");
+        void treatEl.offsetWidth;
+        treatEl.classList.add("pop-in");
+      }
+
+      const eatTimer = setTimeout(() => {
+        playEatSound();
+        state.foodConsumed = [true, true, true, true];
+        renderTeaParty();
+        for (let i = 0; i < 4; i++) {
+          animateSingleMouthItem(i, snackEmoji, "eat");
+        }
+      }, 450);
+
+      const danceTimer = setTimeout(() => {
+        triggerHappyDanceForSeats([0, 1, 2, 3], 2300);
+      }, 1700);
+
+      teaSequenceTimers.push(eatTimer, danceTimer);
+    }
+
+    document.getElementById("platter-sandwiches").addEventListener("click", () => {
+      serveAndConsumeSnack("🥪", "platter-sandwiches");
+    });
+    document.getElementById("btn-tea-sandwich").addEventListener("click", () => {
+      serveAndConsumeSnack("🥪", "platter-sandwiches");
+    });
+
+    document.getElementById("platter-dessert").addEventListener("click", () => {
+      serveAndConsumeSnack("🍰", "platter-dessert");
+    });
+    document.getElementById("btn-tea-dessert").addEventListener("click", () => {
+      serveAndConsumeSnack("🍰", "platter-dessert");
+    });
+
+    document.getElementById("btn-tea-dance").addEventListener("click", () => {
+      clearTeaTimers();
+      triggerHappyDanceForSeats([0, 1, 2, 3], 2400);
+    });
+
+    /* ============================================================
+       7. TOP BAR NAVIGATION & AUDIO TOGGLE
+       ============================================================ */
+    document.getElementById("btn-back-princess").addEventListener("click", () => {
+      playChime("sparkle");
+      switchScreen("select");
+    });
+
+    document.getElementById("tab-dressup").addEventListener("click", () => {
+      playChime("sparkle");
+      switchScreen("dressup");
+    });
+
+    document.getElementById("tab-teaparty").addEventListener("click", () => {
+      playChime("sparkle");
+      switchScreen("teaparty");
+    });
+
+    document.getElementById("btn-sound").addEventListener("click", (e) => {
+      soundEnabled = !soundEnabled;
+      e.currentTarget.textContent = soundEnabled ? "🎵" : "🔇";
+      if (soundEnabled) {
+        ensureAudio();
+        playChime("sparkle");
+      } else {
+        stopPrincessMusic();
+      }
+    });
+
+    buildSelectGrid();
+  </script>
+</body>
+</html>
