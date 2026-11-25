@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Pokémon Sleep 3D — Cozy Campsite & Cooking</title>
+  <meta name="theme-color" content="#38bdf8" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PokeSleep 3D" />
+  <meta name="application-name" content="PokeSleep 3D" />
+  <meta name="description" content="Cozy 3D Pokémon Sleep campsite & cooking game." />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -304,10 +311,17 @@
 
       <!-- Footer -->
       <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0">
-        <button id="btn-reset-open" type="button"
-          class="min-h-[48px] bg-rose-100 hover:bg-rose-200 text-rose-700 font-display font-bold text-xs sm:text-sm px-4 py-2 rounded-2xl transition cursor-pointer">
-          Reset Camp
-        </button>
+        <div class="flex items-center gap-2">
+          <button id="btn-reset-open" type="button"
+            class="min-h-[48px] bg-rose-100 hover:bg-rose-200 text-rose-700 font-display font-bold text-xs sm:text-sm px-3.5 py-2 rounded-2xl transition cursor-pointer">
+            Reset Camp
+          </button>
+          <button id="btn-install-pwa" type="button"
+            class="min-h-[48px] bg-sky-100 hover:bg-sky-200 text-sky-800 font-display font-bold text-xs sm:text-sm px-3.5 py-2 rounded-2xl border border-sky-300 flex items-center gap-1.5 transition cursor-pointer">
+            <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Install App</span>
+          </button>
+        </div>
         <span id="party-modal-hint" class="text-xs font-bold text-indigo-600 hidden sm:inline">Party is full (5/5).</span>
         <button id="btn-done-party" type="button"
           class="min-h-[52px] bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-display font-bold text-base px-8 py-2.5 rounded-2xl shadow-md transition cursor-pointer">
@@ -397,11 +411,283 @@
   </div>
 
   <!-- ========================================================================
+       MODAL 4: ANDROID PWA INSTALL GUIDE (FALLBACK WHEN PROMPT NOT AUTO-FIRED)
+       ======================================================================== -->
+  <div id="modal-install" class="hidden fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="animate-modal-pop bg-white rounded-3xl max-w-sm w-full p-6 border-4 border-sky-200 shadow-2xl text-center">
+      <div class="w-14 h-14 rounded-2xl bg-sky-100 text-sky-600 mx-auto mb-2.5 flex items-center justify-center">
+        <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      </div>
+      <h3 class="font-display text-xl font-bold text-slate-800">Save to Android Home Screen</h3>
+      <p class="text-xs sm:text-sm font-semibold text-slate-600 mt-1.5 leading-relaxed">
+        Install <strong class="text-slate-800">Pokémon Sleep 3D</strong> as a full-screen app on your phone:
+      </p>
+      <div class="bg-sky-50 border border-sky-200 rounded-2xl p-3 mt-3 text-left text-xs sm:text-sm font-bold text-slate-700 space-y-2">
+        <div class="flex items-start gap-2">
+          <span class="w-5 h-5 rounded-full bg-sky-500 text-white text-xs flex items-center justify-center shrink-0 mt-0.5">1</span>
+          <span>Tap the <strong>⋮</strong> menu button in the top-right corner of Chrome.</span>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="w-5 h-5 rounded-full bg-sky-500 text-white text-xs flex items-center justify-center shrink-0 mt-0.5">2</span>
+          <span>Tap <strong>Add to Home screen</strong> or <strong>Install app</strong>.</span>
+        </div>
+      </div>
+      <button id="btn-install-close" type="button"
+        class="mt-5 w-full min-h-[48px] bg-sky-500 hover:bg-sky-600 text-white font-display font-bold text-base py-2.5 rounded-2xl shadow-md transition cursor-pointer">
+        Got It!
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================
        COMPLETE 3D GAME ENGINE, HIGH-FIDELITY MODELS, CUSTOM SVGS & AUDIO
        ======================================================================== -->
   <script>
     (() => {
       'use strict';
+
+      /* ======================================================================
+         0. ANDROID PWA MANIFEST, ADAPTIVE PNG ICONS & SERVICE WORKER SETUP
+         ====================================================================== */
+      let deferredInstallPrompt = null;
+
+      function isRunningStandalonePwa() {
+        return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+          window.navigator.standalone === true;
+      }
+
+      function updateAndroidThemeColor(isNight) {
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+          metaTheme.setAttribute('content', isNight ? '#0f172a' : '#38bdf8');
+        }
+      }
+
+      function renderAppIconBlob(size) {
+        return new Promise((resolve) => {
+          const c = document.createElement('canvas');
+          c.width = size;
+          c.height = size;
+          const ctx = c.getContext('2d');
+          const s = size / 512;
+
+          // Full-bleed sky & meadow background (ideal for Android maskable adaptive icons)
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, size);
+          skyGrad.addColorStop(0, '#38bdf8');
+          skyGrad.addColorStop(0.68, '#bae6fd');
+          skyGrad.addColorStop(0.69, '#4ade80');
+          skyGrad.addColorStop(1, '#16a34a');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(0, 0, size, size);
+
+          // Decorative twinkling stars in the upper sky
+          ctx.fillStyle = '#fef08a';
+          [[105, 95, 12], [405, 88, 14], [140, 165, 8], [380, 160, 9]].forEach(([sx, sy, sr]) => {
+            ctx.beginPath();
+            ctx.arc(sx * s, sy * s, sr * s, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          // Snorlax pointed ears (kept inside Android maskable safe zone)
+          ctx.fillStyle = '#165b75';
+          ctx.strokeStyle = '#0b3546';
+          ctx.lineWidth = 10 * s;
+          ctx.beginPath();
+          ctx.moveTo(148 * s, 210 * s);
+          ctx.lineTo(156 * s, 118 * s);
+          ctx.lineTo(222 * s, 175 * s);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(364 * s, 210 * s);
+          ctx.lineTo(356 * s, 118 * s);
+          ctx.lineTo(290 * s, 175 * s);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Snorlax round head
+          ctx.beginPath();
+          ctx.arc(256 * s, 268 * s, 134 * s, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Peachy-cream face mask with signature widow's peak
+          ctx.fillStyle = '#f5dec3';
+          ctx.beginPath();
+          ctx.moveTo(256 * s, 198 * s);
+          ctx.bezierCurveTo(212 * s, 165 * s, 152 * s, 196 * s, 152 * s, 266 * s);
+          ctx.bezierCurveTo(152 * s, 336 * s, 200 * s, 376 * s, 256 * s, 376 * s);
+          ctx.bezierCurveTo(312 * s, 376 * s, 360 * s, 336 * s, 360 * s, 266 * s);
+          ctx.bezierCurveTo(360 * s, 196 * s, 300 * s, 165 * s, 256 * s, 198 * s);
+          ctx.closePath();
+          ctx.fill();
+
+          // Sleeping eyes & peaceful smile
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 11 * s;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(186 * s, 256 * s);
+          ctx.lineTo(228 * s, 262 * s);
+          ctx.moveTo(326 * s, 256 * s);
+          ctx.lineTo(284 * s, 262 * s);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(256 * s, 294 * s, 34 * s, 0.14 * Math.PI, 0.86 * Math.PI);
+          ctx.stroke();
+
+          // Cute mini Pokéball badge in lower-right safe corner
+          const bx = 352 * s;
+          const by = 368 * s;
+          const br = 44 * s;
+          ctx.beginPath();
+          ctx.arc(bx, by, br, Math.PI, 0);
+          ctx.fillStyle = '#ef4444';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.lineWidth = 7 * s;
+          ctx.strokeStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.moveTo(bx - br, by);
+          ctx.lineTo(bx + br, by);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(bx, by, 13 * s, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.stroke();
+
+          c.toBlob((blob) => resolve(blob), 'image/png');
+        });
+      }
+
+      async function initAndroidPwaSupport() {
+        try {
+          const [blob192, blob512] = await Promise.all([
+            renderAppIconBlob(192),
+            renderAppIconBlob(512)
+          ]);
+
+          if (blob192 && blob512) {
+            const url192 = URL.createObjectURL(blob192);
+            const url512 = URL.createObjectURL(blob512);
+
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/png';
+            favicon.href = url192;
+            document.head.appendChild(favicon);
+
+            const appleIcon = document.createElement('link');
+            appleIcon.rel = 'apple-touch-icon';
+            appleIcon.href = url192;
+            document.head.appendChild(appleIcon);
+
+            const startUrl = window.location.protocol.startsWith('http')
+              ? window.location.href
+              : './';
+            const scopeUrl = window.location.protocol.startsWith('http')
+              ? new URL('./', window.location.href).href
+              : './';
+
+            const manifestData = {
+              name: 'Pokémon Sleep 3D — Cozy Campsite',
+              short_name: 'PokeSleep 3D',
+              description: 'Cozy 3D Pokémon Sleep campsite & cooking game.',
+              start_url: startUrl,
+              scope: scopeUrl,
+              display: 'standalone',
+              orientation: 'any',
+              background_color: '#7dd3fc',
+              theme_color: '#38bdf8',
+              categories: ['games', 'kids', 'entertainment'],
+              icons: [
+                { src: url192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+                { src: url192, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+                { src: url512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+                { src: url512, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+              ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifestData)], {
+              type: 'application/manifest+json'
+            });
+            const manifestUrl = URL.createObjectURL(manifestBlob);
+
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = manifestUrl;
+            document.head.appendChild(manifestLink);
+          }
+
+          // Register lightweight offline Service Worker when served over HTTP/HTTPS
+          if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+            const swCode = `
+              const CACHE_NAME = 'pokesleep-3d-pwa-v1';
+              self.addEventListener('install', (event) => {
+                self.skipWaiting();
+              });
+              self.addEventListener('activate', (event) => {
+                event.waitUntil(self.clients.claim());
+              });
+              self.addEventListener('fetch', (event) => {
+                if (event.request.method !== 'GET') return;
+                event.respondWith(
+                  caches.open(CACHE_NAME).then(async (cache) => {
+                    const cached = await cache.match(event.request);
+                    if (cached) return cached;
+                    try {
+                      const fresh = await fetch(event.request);
+                      if (fresh && (fresh.status === 200 || fresh.type === 'opaque')) {
+                        cache.put(event.request, fresh.clone()).catch(() => {});
+                      }
+                      return fresh;
+                    } catch (err) {
+                      return cached || Response.error();
+                    }
+                  })
+                );
+              });
+            `;
+            const swBlob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(swBlob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+          }
+        } catch (err) {
+          // Graceful fallback in sandboxed iframe previews
+        }
+      }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const installBtn = document.getElementById('btn-install-pwa');
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+          installBtn.classList.add('ring-2', 'ring-sky-400');
+        }
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        const installBtn = document.getElementById('btn-install-pwa');
+        if (installBtn) installBtn.classList.add('hidden');
+        const installModal = document.getElementById('modal-install');
+        if (installModal) installModal.classList.add('hidden');
+        showToast('App saved to your home screen!');
+      });
+
+      initAndroidPwaSupport();
 
       /* ======================================================================
          1. HIGH-FIDELITY CUSTOM SVG ARTWORK LIBRARY
@@ -4447,6 +4733,7 @@
         const soundSvg = state.muted ? UI_SVGS.soundOff : UI_SVGS.soundOn;
         const themeSvg = state.isNight ? UI_SVGS.moon : UI_SVGS.sun;
         const themeLabel = state.isNight ? 'Night' : 'Day';
+        updateAndroidThemeColor(state.isNight);
 
         dom.soundIconWrap.innerHTML = soundSvg;
         dom.themeIconWrap.innerHTML = themeSvg;
@@ -4890,6 +5177,38 @@
           sound.playUiPop(300);
           showToast('Campsite progress reset!');
         });
+
+        const btnInstallPwa = document.getElementById('btn-install-pwa');
+        const modalInstall = document.getElementById('modal-install');
+        if (isRunningStandalonePwa() && btnInstallPwa) {
+          btnInstallPwa.classList.add('hidden');
+        }
+        if (btnInstallPwa) {
+          btnInstallPwa.addEventListener('click', async () => {
+            sound.playUiPop(520);
+            if (deferredInstallPrompt) {
+              deferredInstallPrompt.prompt();
+              const choice = await deferredInstallPrompt.userChoice.catch(() => null);
+              if (choice && choice.outcome === 'accepted') {
+                deferredInstallPrompt = null;
+                closePartyModal();
+              }
+            } else if (modalInstall) {
+              closePartyModal();
+              modalInstall.classList.remove('hidden');
+            }
+          });
+        }
+        const btnInstallClose = document.getElementById('btn-install-close');
+        if (btnInstallClose && modalInstall) {
+          btnInstallClose.addEventListener('click', () => {
+            sound.playUiPop(420);
+            modalInstall.classList.add('hidden');
+          });
+          modalInstall.addEventListener('click', (e) => {
+            if (e.target === modalInstall) modalInstall.classList.add('hidden');
+          });
+        }
       }
 
       function handleResize() {
