@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pokémon Sleep 3D — Cozy Campsite & Cooking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { --font-display: 'Fredoka', sans-serif; --font-body: 'Nunito', sans-serif; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden; touch-action: manipulation; font-family: var(--font-body); background-color: #7dd3fc; }
+    .font-display { font-family: var(--font-display); }
+    #game-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; touch-action: none; cursor: pointer; }
+    @keyframes modalPop { 0% { opacity: 0; transform: scale(.92) translateY(16px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+    .animate-modal-pop { animation: modalPop .24s cubic-bezier(.22,1,.36,1) forwards; }
+    @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(251,146,60,.68); } 50% { box-shadow: 0 0 0 10px rgba(251,146,60,0); } }
+    .animate-cook-ready { animation: pulseGlow 1.8s infinite; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,.04); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(100,116,139,.35); border-radius: 9999px; }
+  </style>
+</head>
+<body class="h-dvh w-screen overflow-hidden select-none">
+  <canvas id="game-canvas"></canvas>
+  <div id="fx-layer" class="pointer-events-none fixed inset-0 z-10 overflow-hidden"></div>
+
+  <header class="pointer-events-none fixed top-0 inset-x-0 z-20 px-3 pt-3 sm:px-5 sm:pt-4 flex items-start justify-between gap-2">
+    <div class="pointer-events-auto flex items-center gap-2.5 bg-white/92 backdrop-blur-md border-2 border-amber-200/90 shadow-lg rounded-2xl px-3 py-2 flex-1 max-w-[315px]">
+      <div id="rank-badge" class="flex flex-col items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-inner shrink-0">
+        <span class="text-[9px] uppercase tracking-wider font-extrabold opacity-90">Rank</span>
+        <span id="rank-tier-short" class="font-display text-sm font-bold leading-tight">B-1</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-baseline justify-between gap-1.5">
+          <span id="rank-label" class="font-display font-bold text-slate-800 text-sm sm:text-base truncate">Basic 1</span>
+          <span class="text-xs font-extrabold text-amber-600 flex items-center gap-1 shrink-0">⚡ <span id="strength-value">0</span></span>
+        </div>
+        <div class="w-full h-2.5 bg-slate-200/90 rounded-full overflow-hidden mt-1 p-0.5">
+          <div id="rank-progress-bar" class="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 transition-all duration-700" style="width:0%"></div>
+        </div>
+        <div class="flex justify-between text-[10px] font-bold text-slate-500 mt-0.5"><span>Snorlax Strength</span><span id="next-rank-label">Next: 1,200</span></div>
+      </div>
+    </div>
+    <div class="pointer-events-auto flex items-center gap-1.5 shrink-0">
+      <button id="btn-theme-toggle" type="button" aria-label="Toggle Day and Night" class="flex items-center justify-center gap-1.5 bg-white/92 hover:bg-white active:scale-95 text-slate-800 font-bold text-xs sm:text-sm px-3 py-2.5 rounded-2xl shadow-md border-b-4 border-slate-300 transition cursor-pointer"><span id="theme-icon-wrap">☀️</span><span id="theme-text" class="hidden sm:inline">Day</span></button>
+      <button id="btn-sound-toggle" type="button" aria-label="Toggle Sound" class="flex items-center justify-center bg-white/92 hover:bg-white active:scale-95 text-slate-800 font-bold p-2.5 rounded-2xl shadow-md border-b-4 border-slate-300 transition cursor-pointer"><span id="sound-icon-wrap">🔊</span></button>
+      <button id="btn-reset-open" type="button" aria-label="Reset Camp" class="flex items-center justify-center bg-white/92 hover:bg-rose-50 active:scale-95 text-rose-600 font-bold p-2.5 rounded-2xl shadow-md border-b-4 border-slate-300 transition cursor-pointer">↻</button>
+    </div>
+  </header>
+
+  <div id="onboarding-pill" class="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-20 transition-all duration-500">
+    <div class="bg-slate-900/85 backdrop-blur-md text-white font-bold text-xs px-4 py-1.5 rounded-full shadow-lg border border-white/15 whitespace-nowrap flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span><span>Tap Pokémon to gather • Tap Snorlax or Pot to cook!</span></div>
+  </div>
+
+  <div id="toast-banner" class="pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-30 opacity-0 translate-y-2 transition-all duration-300"><div id="toast-content" class="bg-slate-900/92 backdrop-blur-md text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-full shadow-xl border border-white/20 whitespace-nowrap flex items-center gap-2"></div></div>
+
+  <div id="celebration-banner" class="hidden pointer-events-none fixed top-20 inset-x-3 z-30 flex justify-center">
+    <div class="animate-modal-pop bg-white/95 backdrop-blur-md border-4 border-amber-300 rounded-3xl px-5 py-3 shadow-2xl text-center max-w-sm w-full">
+      <div id="celeb-crit-badge" class="hidden inline-block bg-gradient-to-r from-yellow-400 via-amber-400 to-rose-500 text-slate-950 font-display font-extrabold text-xs uppercase tracking-wider px-3 py-0.5 rounded-full shadow mb-1">EXTRA TASTY! 2x STRENGTH!</div>
+      <div id="celeb-status-text" class="font-display font-bold text-base sm:text-lg text-slate-800 leading-tight">Feast Time!</div>
+      <div id="celeb-strength-text" class="text-xs font-extrabold text-amber-600">+1,200 Snorlax Strength</div>
+      <div id="celeb-rankup-text" class="hidden mt-1.5 pt-1.5 border-t border-amber-200 text-xs font-extrabold text-emerald-600"></div>
+    </div>
+  </div>
+
+  <footer id="bottom-dock" class="pointer-events-none fixed bottom-0 inset-x-0 z-20 px-2.5 pb-2.5 sm:px-5 sm:pb-4 transition-transform duration-300">
+    <div class="pointer-events-auto max-w-3xl mx-auto bg-white/92 backdrop-blur-md border-2 border-amber-200/90 shadow-2xl rounded-3xl p-2 sm:p-3 space-y-2">
+      <div class="flex items-center justify-between px-1"><span class="font-display font-bold text-[11px] sm:text-xs uppercase tracking-wider text-slate-600">🧺 Ingredient Bag</span><span class="text-[11px] font-bold text-slate-500">In Party • Total: <strong id="total-ingredients-count" class="text-slate-800">0</strong></span></div>
+      <div id="ingredient-bag-strip" class="flex sm:grid sm:grid-cols-9 gap-1.5 overflow-x-auto no-scrollbar pb-0.5"></div>
+      <div class="grid grid-cols-2 gap-2 pt-0.5">
+        <button id="btn-open-party" type="button" class="flex items-center justify-center gap-2 bg-gradient-to-b from-indigo-500 to-indigo-600 hover:from-indigo-400 hover:to-indigo-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base py-3 px-4 rounded-2xl shadow-md border-b-4 border-indigo-800 transition cursor-pointer">👥 <span>Party (<span id="party-count-label">5</span>/5)</span></button>
+        <button id="btn-open-cook" type="button" class="relative flex items-center justify-center gap-2 bg-gradient-to-b from-amber-400 via-orange-500 to-orange-600 hover:from-amber-300 hover:to-orange-500 active:scale-95 text-white font-display font-bold text-sm sm:text-base py-3 px-4 rounded-2xl shadow-md border-b-4 border-orange-800 transition cursor-pointer">🍲 <span>Cook Meal</span><span id="cook-ready-badge" class="hidden absolute -top-2 right-2 bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border-2 border-white shadow">Ready!</span></button>
+      </div>
+    </div>
+  </footer>
+
+  <div id="modal-party" class="hidden fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="animate-modal-pop bg-white w-full max-w-2xl max-h-[88dvh] rounded-t-3xl sm:rounded-3xl shadow-2xl border-t-4 sm:border-4 border-indigo-200 flex flex-col overflow-hidden">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-3.5 text-white flex items-center justify-between shrink-0"><div><h3 class="font-display text-lg sm:text-xl font-bold">Campsite Party <span id="modal-party-counter" class="bg-white/20 text-xs px-2 py-0.5 rounded-full">5/5</span></h3><p class="text-xs text-indigo-100 font-semibold">Choose 5 Pokémon helpers.</p></div><button id="btn-close-party" type="button" class="w-9 h-9 rounded-full bg-white/20 text-white font-bold text-lg">✕</button></div>
+      <div class="bg-indigo-50/90 px-3.5 py-2.5 border-b border-indigo-100 shrink-0"><div class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 mb-1.5">Active Helpers</div><div id="party-slots-preview" class="grid grid-cols-5 gap-1.5"></div></div>
+      <div class="p-3.5 overflow-y-auto custom-scroll flex-1"><div id="all-pokemon-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div></div>
+      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0"><span id="party-modal-hint" class="text-xs font-bold text-indigo-600"></span><button id="btn-done-party" type="button" class="bg-indigo-600 text-white font-display font-bold text-sm px-6 py-2.5 rounded-2xl">Done</button></div>
+    </div>
+  </div>
+
+  <div id="modal-cook" class="hidden fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="animate-modal-pop bg-amber-50 w-full max-w-2xl max-h-[88dvh] rounded-t-3xl sm:rounded-3xl shadow-2xl border-t-4 sm:border-4 border-amber-300 flex flex-col overflow-hidden">
+      <div class="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 px-5 py-3.5 text-white flex items-center justify-between shrink-0"><div><h3 class="font-display text-lg sm:text-xl font-bold">Snorlax's Cooking Pot</h3><p class="text-xs text-amber-100 font-semibold">Feeds everyone in camp • 25% Extra Tasty chance</p></div><button id="btn-close-cook" type="button" class="w-9 h-9 rounded-full bg-white/20 text-white font-bold text-lg">✕</button></div>
+      <div id="quick-cook-bar" class="hidden bg-emerald-100/90 border-b border-emerald-200 px-4 py-2.5 flex items-center justify-between gap-2 shrink-0"><div class="text-xs font-extrabold text-emerald-900"><span id="quick-cook-label">Recipe ready!</span></div><button id="btn-quick-cook" type="button" class="shrink-0 bg-emerald-600 text-white font-display font-bold text-xs px-4 py-2 rounded-xl">Quick Cook</button></div>
+      <div id="recipes-list" class="p-3.5 overflow-y-auto custom-scroll flex-1 space-y-2.5"></div>
+      <div class="px-4 py-3 bg-amber-100/80 border-t border-amber-200 flex items-center justify-between shrink-0"><button id="btn-cook-to-party" type="button" class="text-xs font-extrabold text-indigo-700">Swap Party Pokémon</button><button id="btn-close-cook-bottom" type="button" class="bg-slate-800 text-white font-display font-bold text-xs px-5 py-2 rounded-2xl">Close</button></div>
+    </div>
+  </div>
+
+  <div id="modal-reset" class="hidden fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="animate-modal-pop bg-white rounded-3xl max-w-sm w-full p-6 border-4 border-rose-200 shadow-2xl text-center"><h3 class="font-display text-xl font-bold text-slate-800">Reset Camp Progress?</h3><p class="text-sm font-semibold text-slate-500 mt-1.5">This resets strength and ingredients and restores the starter party.</p><div class="grid grid-cols-2 gap-3 mt-5"><button id="btn-reset-cancel" type="button" class="bg-slate-200 text-slate-700 font-bold py-2.5 rounded-2xl">Cancel</button><button id="btn-reset-confirm" type="button" class="bg-rose-500 text-white font-bold py-2.5 rounded-2xl">Yes, Reset</button></div></div>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const STORAGE_KEY = 'pokemon_sleep_3d_camp_v2';
+      const DEFAULT_PARTY = ['pikachu','eevee','espeon','fuecoco','applin'];
+      const POKEMON_ORDER = ['pikachu','eevee','espeon','fuecoco','applin','gengar','blastoise','zapdos','mew'];
+      const POKEMON_DATA = {
+        espeon:{name:'Espeon',color:'#d8b4fe',ingredient:'Mystic Egg',short:'Egg',emoji:'✨',pitch:587.33},
+        pikachu:{name:'Pikachu',color:'#facc15',ingredient:'Spark Cheese',short:'Cheese',emoji:'⚡',pitch:659.25},
+        mew:{name:'Mew',color:'#f9a8d4',ingredient:'Creamy Milk',short:'Milk',emoji:'🥛',pitch:783.99},
+        gengar:{name:'Gengar',color:'#818cf8',ingredient:'Shadow Beef',short:'Beef',emoji:'🥩',pitch:329.63},
+        blastoise:{name:'Blastoise',color:'#38bdf8',ingredient:'Hydro Rice',short:'Rice',emoji:'🍚',pitch:293.66},
+        applin:{name:'Applin',color:'#f87171',ingredient:'Crisp Apple',short:'Apple',emoji:'🍎',pitch:523.25},
+        zapdos:{name:'Zapdos',color:'#fbbf24',ingredient:'Thunder Chicken',short:'Chicken',emoji:'🍗',pitch:440},
+        eevee:{name:'Eevee',color:'#d97706',ingredient:'Sunlit Wheat',short:'Wheat',emoji:'🌾',pitch:493.88},
+        fuecoco:{name:'Fuecoco',color:'#fb7185',ingredient:'Blaze Tomato',short:'Tomato',emoji:'🍅',pitch:392}
+      };
+      const RECIPES = [
+        {id:'pizza',name:'Pizza',strength:1200,req:{eevee:2,pikachu:2,fuecoco:1},emoji:'🍕'},
+        {id:'hamburger',name:'Hamburger',strength:1400,req:{eevee:2,gengar:2,fuecoco:1},emoji:'🍔'},
+        {id:'teriyaki',name:'Teriyaki Chicken and Rice',strength:1500,req:{zapdos:2,blastoise:2,applin:1},emoji:'🍛'},
+        {id:'mac',name:'Mac and Cheese',strength:1350,req:{eevee:2,pikachu:2,mew:1},emoji:'🧀'},
+        {id:'waffles',name:'Waffles',strength:1450,req:{eevee:2,espeon:1,mew:1,applin:1},emoji:'🧇'}
+      ];
+
+      const RANKS = (() => {
+        const a=[]; [0,1200,2500,4000,5800].forEach((min,i)=>a.push({name:`Basic ${i+1}`,short:`B-${i+1}`,min,gradient:'from-emerald-400 to-teal-600'}));
+        [8000,10500,13500,17000,21000].forEach((min,i)=>a.push({name:`Great ${i+1}`,short:`G-${i+1}`,min,gradient:'from-sky-400 to-blue-600'}));
+        [25500,30500,36000,42000,49000].forEach((min,i)=>a.push({name:`Ultra ${i+1}`,short:`U-${i+1}`,min,gradient:'from-amber-400 to-orange-600'}));
+        for(let i=1;i<=20;i++) a.push({name:`Master ${i}`,short:`M-${i}`,min:57000+(i-1)*9000,gradient:'from-fuchsia-500 via-purple-600 to-indigo-700'});
+        return a;
+      })();
+
+      function rankInfo(strength){let idx=0;for(let i=0;i<RANKS.length;i++){if(strength>=RANKS[i].min)idx=i;else break;}const current=RANKS[idx],next=RANKS[idx+1]||null;return{current,next,index:idx,progressPct:next?Math.min(100,Math.max(0,(strength-current.min)/(next.min-current.min)*100)):100};}
+
+      function createDefaultState(){const inventory={};POKEMON_ORDER.forEach(id=>inventory[id]=0);return{party:[...DEFAULT_PARTY],inventory,strength:0,isNight:false,muted:false,mealsCooked:0};}
+      function loadState(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return createDefaultState();const p=JSON.parse(raw),b=createDefaultState();if(Array.isArray(p.party)){const v=p.party.filter(id=>POKEMON_DATA[id]).slice(0,5);if(v.length)b.party=v;}POKEMON_ORDER.forEach(id=>{const n=Number(p.inventory?.[id]);b.inventory[id]=Number.isFinite(n)&&n>=0?Math.floor(n):0;});b.strength=Number.isFinite(Number(p.strength))&&p.strength>=0?Math.floor(Number(p.strength)):0;b.isNight=!!p.isNight;b.muted=!!p.muted;b.mealsCooked=Number(p.mealsCooked)||0;return b;}catch(e){return createDefaultState();}}
+      let state=loadState();
+      function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}}
+
+      class SoundEngine{constructor(){this.ctx=null;this.muted=state.muted;}unlock(){if(!this.ctx&&window.AudioContext)this.ctx=new AudioContext();if(this.ctx?.state==='suspended')this.ctx.resume?.();}tone(freq,duration=.12,type='sine',volume=.12){if(this.muted)return;this.unlock();if(!this.ctx)return;const t=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(volume,t);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+duration);}gather(freq){if(this.muted)return;this.unlock();if(!this.ctx)return;const t=this.ctx.currentTime,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type='sine';o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(freq*1.5,t+.14);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.24);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+.25);}chime(){[440,554.37,659.25,880].forEach((f,i)=>setTimeout(()=>this.tone(f,.28,'sine',.16),i*70));}}
+      const sound=new SoundEngine();
+
+      const canvas=document.getElementById('game-canvas');
+      const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+      const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(44,innerWidth/innerHeight,.1,120);const target=new THREE.Vector3(0,.85,.35);let fixedRadius=17.5;
+      function applyCamera(){camera.position.set(target.x,target.y+fixedRadius*Math.cos(.9),target.z+fixedRadius*Math.sin(.9));camera.lookAt(target);}
+      scene.background=new THREE.Color(0x7dd3fc);scene.fog=new THREE.FogExp2(0xbae6fd,.015);
+      const hemi=new THREE.HemisphereLight(0xe0f2fe,0x4d7c0f,.98),sun=new THREE.DirectionalLight(0xfffbeb,1.25),rim=new THREE.DirectionalLight(0xfef3c7,.52),fireLight=new THREE.PointLight(0xf97316,1.2,14,1.6);sun.position.set(9,18,11);sun.castShadow=true;rim.position.set(-8,12,-10);fireLight.position.set(-2.55,1.1,2.35);scene.add(hemi,sun,rim,fireLight);
+
+      function meshMat(color,rough=.7){return new THREE.MeshStandardMaterial({color,roughness:rough});}
+      function shadowPad(r=.65){const m=new THREE.Mesh(new THREE.CircleGeometry(r,24),new THREE.MeshBasicMaterial({color:0x0f172a,transparent:true,opacity:.22}));m.rotation.x=-Math.PI/2;m.position.y=.02;return m;}
+
+      const ground=new THREE.Mesh(new THREE.CircleGeometry(36,48),meshMat(0x73cc52,.9));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+      const blanket=new THREE.Mesh(new THREE.CylinderGeometry(3.35,3.45,.05,40),meshMat(0xfef9c3,.95));blanket.position.set(0,.025,-.55);blanket.receiveShadow=true;scene.add(blanket);
+
+      const trunkMat=meshMat(0x78350f,.9),pineMat=meshMat(0x2f855a,.8),pineMat2=meshMat(0x38a169,.8),rockMat=meshMat(0x94a3b8,.9);
+      for(let i=0;i<16;i++){const a=i/16*Math.PI*2+.3,dist=10.5+(i%3)*1.1,x=Math.cos(a)*dist,z=Math.sin(a)*dist-.5;if(i%3===0){const r=new THREE.Mesh(new THREE.DodecahedronGeometry(.55+(i%2)*.25),rockMat);r.position.set(x,.35,z);r.castShadow=true;scene.add(r);}else{const g=new THREE.Group(),trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.35,1.35,8),trunkMat),c1=new THREE.Mesh(new THREE.ConeGeometry(1.35,2,8),pineMat),c2=new THREE.Mesh(new THREE.ConeGeometry(1.05,1.6,8),pineMat2);trunk.position.y=.67;c1.position.y=1.85;c2.position.y=2.95;trunk.castShadow=c1.castShadow=c2.castShadow=true;g.add(trunk,c1,c2);g.position.set(x,0,z);scene.add(g);}}
+      const flowerColors=[0xfef08a,0xffffff,0xfbcfe8,0xfdba74];for(let i=0;i<40;i++){const a=i*2.39996,r=4.2+(i*1.73)%5.2,f=new THREE.Mesh(new THREE.CylinderGeometry(.13,.08,.04,6),meshMat(flowerColors[i%4],.7));f.position.set(Math.cos(a)*r,.04,Math.sin(a)*r);scene.add(f);}
+
+      const starGeo=new THREE.BufferGeometry(),starPos=new Float32Array(180*3);for(let i=0;i<180;i++){const th=Math.random()*Math.PI*2,ph=Math.random()*Math.PI*.42,r=42;starPos[i*3]=r*Math.sin(ph)*Math.cos(th);starPos[i*3+1]=8+r*Math.cos(ph);starPos[i*3+2]=r*Math.sin(ph)*Math.sin(th);}starGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));const starMat=new THREE.PointsMaterial({color:0xfef9c3,size:.45,transparent:true,opacity:0});const stars=new THREE.Points(starGeo,starMat);scene.add(stars);
+
+      const pot=new THREE.Group();pot.position.set(-2.55,0,2.35);scene.add(pot);
+      const fireMats=[meshMat(0xf97316,.4),meshMat(0xfacc15,.4),meshMat(0xef4444,.4)];const flames=[];for(let i=0;i<3;i++){const f=new THREE.Mesh(new THREE.ConeGeometry(.24-i*.04,.55-i*.08,7),fireMats[i]);f.position.set((i-1)*.08,.34,(i%2)*.06);pot.add(f);flames.push(f);}
+      const potBody=new THREE.Mesh(new THREE.SphereGeometry(.56,18,14,0,Math.PI*2,.35,Math.PI*.65),meshMat(0x1e293b,.4));potBody.position.y=1.02;potBody.castShadow=true;pot.add(potBody);const potRim=new THREE.Mesh(new THREE.TorusGeometry(.53,.055,8,22),meshMat(0x1e293b,.4));potRim.rotation.x=Math.PI/2;potRim.position.y=1.08;pot.add(potRim);const stew=new THREE.Mesh(new THREE.CircleGeometry(.5,18),meshMat(0xfb923c,.28));stew.rotation.x=-Math.PI/2;stew.position.y=1.06;pot.add(stew);
+
+      function faceTexture(excited=false){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.clearRect(0,0,512,512);x.strokeStyle='#1e293b';x.fillStyle='#fff';x.lineWidth=12;x.lineCap='round';function eye(cx,cy){if(excited){x.beginPath();x.arc(cx,cy+8,36,Math.PI*1.12,Math.PI*1.88);x.stroke();}else{x.beginPath();x.ellipse(cx,cy,36,40,0,0,Math.PI*2);x.fill();x.stroke();x.fillStyle='#0f172a';x.beginPath();x.ellipse(cx,cy,16,20,0,0,Math.PI*2);x.fill();x.fillStyle='#fff';x.beginPath();x.arc(cx-10,cy-12,7,0,Math.PI*2);x.fill();x.strokeStyle='#1e293b';x.lineWidth=12;}}eye(175,235);x.strokeStyle='#1e293b';eye(337,235);x.fillStyle='#f43f5e';if(excited){x.beginPath();x.arc(256,315,64,0,Math.PI*2);x.fill();x.stroke();}else{x.beginPath();x.arc(256,315,58,.1*Math.PI,.9*Math.PI);x.stroke();}const t=new THREE.CanvasTexture(c);t.needsUpdate=true;return t;}
+
+      function buildSnorlax(){const r=new THREE.Group();r.position.set(0,0,-.55);const teal=meshMat(0x266575,.72),cream=meshMat(0xfef3c7,.78);const body=new THREE.Group();body.position.set(0,1.06,.1);const torso=new THREE.Mesh(new THREE.SphereGeometry(1.78,28,24),teal);torso.scale.set(1.08,.76,1.15);torso.castShadow=true;body.add(torso);const belly=new THREE.Mesh(new THREE.SphereGeometry(1.44,24,20),cream);belly.position.set(0,.38,.12);belly.scale.set(1.02,.66,1.06);body.add(belly);const arms=[];[-1,1].forEach(side=>{const pivot=new THREE.Group();pivot.position.set(side*1.55,-.05,-.15);const arm=new THREE.Mesh(new THREE.SphereGeometry(.64,18,14),teal);arm.scale.set(1.42,.64,.78);arm.position.set(side*.42,-.1,0);arm.castShadow=true;pivot.add(arm);body.add(pivot);arms.push(pivot);});r.add(body);const head=new THREE.Group();head.position.set(0,2.56,-1.42);head.rotation.x=-.32;const hs=new THREE.Mesh(new THREE.SphereGeometry(1.06,26,22),teal);hs.castShadow=true;head.add(hs);const fm=new THREE.Mesh(new THREE.SphereGeometry(.88,24,20),cream);fm.position.z=.31;fm.scale.set(1.04,.9,.78);head.add(fm);const normal=new THREE.Mesh(new THREE.SphereGeometry(.905,24,20),new THREE.MeshBasicMaterial({map:faceTexture(false),transparent:true,depthWrite:false}));normal.position.copy(fm.position);const excited=new THREE.Mesh(normal.geometry,new THREE.MeshBasicMaterial({map:faceTexture(true),transparent:true,depthWrite:false}));excited.position.copy(fm.position);excited.visible=false;head.add(normal,excited);[-1,1].forEach(side=>{const ear=new THREE.Mesh(new THREE.ConeGeometry(.32,.66,12),teal);ear.position.set(side*.68,.88,-.05);ear.rotation.z=side*-0.38;head.add(ear);});r.add(head);const collider=new THREE.Mesh(new THREE.BoxGeometry(4.3,2.6,4.5),new THREE.MeshBasicMaterial({visible:false}));collider.position.set(0,1.2,0);collider.userData={cook:true};r.add(collider);scene.add(r);return{root:r,body,belly,head,arms,normal,excited};}
+      const snorlax=buildSnorlax();
+
+      function makePokemon(id,idx){const g=new THREE.Group();g.add(shadowPad(.65));const p=meshMat(POKEMON_DATA[id].color,.55);const body=new THREE.Mesh(new THREE.SphereGeometry(id==='gengar'?.58:.42,22,18),p);body.scale.set(1,id==='blastoise'?1.05:1.1,.92);body.position.y=.55;body.castShadow=true;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.36,20,16),p);head.position.set(0,1.12,.05);head.castShadow=true;g.add(head);[-1,1].forEach(side=>{const ear=new THREE.Mesh(new THREE.ConeGeometry(.11,.35,8),p);ear.position.set(side*.23,1.43,0);ear.rotation.z=side*-0.35;g.add(ear);});if(id==='mew'){g.position.y=.25;}const hit=new THREE.Mesh(new THREE.SphereGeometry(1.15,12,12),new THREE.MeshBasicMaterial({visible:false}));hit.position.y=.85;hit.userData={pokemon:id};g.add(hit);const pos=new THREE.Vector3(Math.cos(idx*1.256)*4.6,0,Math.sin(idx*1.256)*4.0);g.position.copy(pos);g.rotation.y=Math.atan2(-pos.x,-pos.z);scene.add(g);return{id,root:g,body,head,pos,target:null,pause:Math.random()*.8,walk:idx,hit};}
+
+      const entities=[];function syncParty(){entities.forEach(e=>scene.remove(e.root));entities.length=0;state.party.forEach((id,i)=>entities.push(makePokemon(id,i)));}
+
+      function lerpAngle(a,b,t){let d=b-a;while(d<-Math.PI)d+=Math.PI*2;while(d>Math.PI)d-=Math.PI*2;return a+d*Math.min(1,t);} 
+      function wander(dt,elapsed){entities.forEach((e,i)=>{if(!e.target||e.pos.distanceTo(e.target)<.25)e.target=new THREE.Vector3((Math.random()*10)-5,0,(Math.random()*6)-1);const d=e.target.clone().sub(e.pos);d.y=0;if(d.length()<.25)return;d.normalize();const speed=1.25;e.pos.addScaledVector(d,speed*dt);e.root.position.copy(e.pos);e.root.rotation.y=lerpAngle(e.root.rotation.y,Math.atan2(d.x,d.z),dt*7);e.walk+=dt*10;e.body.position.y=.55+Math.abs(Math.sin(e.walk))*(.10+(e.id==='applin'?.14:0));e.root.position.y=e.id==='mew'?Math.sin(elapsed*3+e.walk)*.12:.0;});}
+
+      const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();function directTap(x,y){if(!cutscene.active)sound.unlock();pointer.set(x/innerWidth*2-1,-y/innerHeight*2+1);raycaster.setFromCamera(pointer,camera);const targets=[];entities.forEach(e=>targets.push(e.hit));targets.push(snorlax.root.children.at(-1));const hit=raycaster.intersectObjects(targets,false)[0];if(!hit)return;if(hit.object.userData.pokemon)gather(hit.object.userData.pokemon);else if(hit.object.userData.cook)openCook();}
+      canvas.addEventListener('pointerdown',e=>{if(e.button!==undefined&&e.button!==0)return;directTap(e.clientX,e.clientY);});
+
+      const dom={rankBadge:document.getElementById('rank-badge'),rankTierShort:document.getElementById('rank-tier-short'),rankLabel:document.getElementById('rank-label'),strengthValue:document.getElementById('strength-value'),rankProgressBar:document.getElementById('rank-progress-bar'),nextRankLabel:document.getElementById('next-rank-label'),themeIconWrap:document.getElementById('theme-icon-wrap'),themeText:document.getElementById('theme-text'),soundIconWrap:document.getElementById('sound-icon-wrap'),onboardingPill:document.getElementById('onboarding-pill'),toastBanner:document.getElementById('toast-banner'),toastContent:document.getElementById('toast-content'),celebrationBanner:document.getElementById('celebration-banner'),celebCritBadge:document.getElementById('celeb-crit-badge'),celebStatusText:document.getElementById('celeb-status-text'),celebStrengthText:document.getElementById('celeb-strength-text'),celebRankupText:document.getElementById('celeb-rankup-text'),bottomDock:document.getElementById('bottom-dock'),ingredientBagStrip:document.getElementById('ingredient-bag-strip'),totalIngredientsCount:document.getElementById('total-ingredients-count'),partyCountLabel:document.getElementById('party-count-label'),btnOpenCook:document.getElementById('btn-open-cook'),cookReadyBadge:document.getElementById('cook-ready-badge'),modalParty:document.getElementById('modal-party'),modalPartyCounter:document.getElementById('modal-party-counter'),partySlotsPreview:document.getElementById('party-slots-preview'),allPokemonGrid:document.getElementById('all-pokemon-grid'),partyModalHint:document.getElementById('party-modal-hint'),modalCook:document.getElementById('modal-cook'),quickCookBar:document.getElementById('quick-cook-bar'),quickCookLabel:document.getElementById('quick-cook-label'),recipesList:document.getElementById('recipes-list'),modalReset:document.getElementById('modal-reset')};
+
+      function canCook(r){return Object.entries(r.req).every(([id,n])=>state.inventory[id]>=n);}function renderHud(){const r=rankInfo(state.strength);dom.rankTierShort.textContent=r.current.short;dom.rankLabel.textContent=r.current.name;dom.strengthValue.textContent=state.strength.toLocaleString();dom.rankProgressBar.style.width=r.progressPct+'%';dom.nextRankLabel.textContent=r.next?`Next: ${r.next.min.toLocaleString()}`:'MAX RANK!';dom.rankBadge.className=`flex flex-col items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${r.current.gradient} text-white shadow-inner shrink-0`;dom.partyCountLabel.textContent=state.party.length;dom.soundIconWrap.textContent=state.muted?'🔇':'🔊';dom.themeIconWrap.textContent=state.isNight?'🌙':'☀️';dom.themeText.textContent=state.isNight?'Night':'Day';const ready=RECIPES.some(canCook);dom.cookReadyBadge.classList.toggle('hidden',!ready);dom.btnOpenCook.classList.toggle('animate-cook-ready',ready);}
+      function renderBag(){let total=0;dom.ingredientBagStrip.innerHTML=POKEMON_ORDER.map(id=>{const p=POKEMON_DATA[id],n=state.inventory[id]||0;total+=n;return `<button type="button" data-bag="${id}" class="shrink-0 w-[68px] sm:w-auto flex flex-col items-center py-1.5 px-1 rounded-2xl border ${state.party.includes(id)?'bg-emerald-50 border-emerald-300':'bg-slate-50 border-slate-200'}"><span class="text-base">${p.emoji}</span><span class="font-display font-bold text-xs">${n}</span><span class="text-[9px] font-extrabold text-slate-600">${p.short}</span></button>`;}).join('');dom.totalIngredientsCount.textContent=total;dom.ingredientBagStrip.querySelectorAll('[data-bag]').forEach(b=>b.onclick=()=>showToast(`${POKEMON_DATA[b.dataset.bag].ingredient}: tap ${POKEMON_DATA[b.dataset.bag].name} in the meadow!`));}
+
+      let toastTimer;function showToast(msg){dom.toastContent.textContent=msg;dom.toastBanner.classList.remove('opacity-0','translate-y-2');clearTimeout(toastTimer);toastTimer=setTimeout(()=>dom.toastBanner.classList.add('opacity-0','translate-y-2'),2200);}
+
+      function gather(id){const p=POKEMON_DATA[id],ent=entities.find(e=>e.id===id);if(!ent)return;state.inventory[id]=(state.inventory[id]||0)+1;saveState();sound.gather(p.pitch);ent.body.scale.set(1.15,.9,1.15);setTimeout(()=>ent.body.scale.set(1,1,1),300);spawnPopup(ent.root.position.clone().setY(1.4),`+1 ${p.emoji} ${p.short}`);dom.onboardingPill.classList.add('opacity-0');renderBag();renderHud();}
+
+      const fx=document.getElementById('fx-layer');function spawnPopup(world,msg){world.project(camera);const x=(world.x*.5+.5)*innerWidth,y=(-world.y*.5+.5)*innerHeight;const el=document.createElement('div');el.className='fixed flex items-center bg-white/95 border-2 border-amber-300 text-slate-900 font-display font-bold text-xs px-2.5 py-1 rounded-full shadow-lg';el.style.left=x+'px';el.style.top=y+'px';el.style.transform='translate(-50%,-50%)';el.textContent=msg;fx.appendChild(el);const a=el.animate([{transform:'translate(-50%,-50%) scale(.7)',opacity:1},{transform:'translate(-50%,-210%) scale(1.05)',opacity:0}],{duration:760,easing:'ease-out'});a.onfinish=()=>el.remove();}
+
+      function openParty(){if(cutscene.active)return;renderParty();dom.modalParty.classList.remove('hidden');sound.tone(480,.1);}
+      function closeParty(){dom.modalParty.classList.add('hidden');sound.tone(380,.08);}function toggleParty(id){const i=state.party.indexOf(id);if(i>=0){if(state.party.length<=1){showToast('Keep at least 1 Pokémon in your party');return;}state.party.splice(i,1);}else{if(state.party.length>=5){showToast('Party is full (5/5). Remove someone first.');return;}state.party.push(id);}saveState();syncParty();renderParty();renderBag();renderHud();}
+      function renderParty(){dom.modalPartyCounter.textContent=`${state.party.length}/5`;dom.partyModalHint.textContent=state.party.length>=5?'Party is full (5/5).':'Select '+(5-state.party.length)+' more Pokémon.';dom.partySlotsPreview.innerHTML=state.party.map(id=>`<button type="button" data-remove="${id}" class="rounded-2xl border-2 border-indigo-300 bg-white p-1.5 flex flex-col items-center"><span class="text-2xl">${POKEMON_DATA[id].emoji}</span><span class="text-[10px] font-bold">${POKEMON_DATA[id].name}</span></button>`).join('');dom.partySlotsPreview.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>toggleParty(b.dataset.remove));dom.allPokemonGrid.innerHTML=POKEMON_ORDER.map(id=>{const p=POKEMON_DATA[id],active=state.party.includes(id);return `<button type="button" data-toggle="${id}" class="flex items-center justify-between p-2.5 rounded-2xl border-2 ${active?'bg-indigo-50 border-indigo-500':'bg-white border-slate-200'}"><div class="flex items-center gap-2"><span class="text-3xl">${p.emoji}</span><div class="text-left"><div class="font-display font-bold text-sm">${p.name}</div><div class="text-[10px] font-bold text-slate-500">${p.ingredient} • Bag ${state.inventory[id]||0}</div></div></div><span class="text-[10px] font-extrabold px-2 py-1 rounded-full ${active?'bg-indigo-600 text-white':'bg-slate-200 text-slate-600'}">${active?'Active':'Add'}</span></button>`;}).join('');dom.allPokemonGrid.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>toggleParty(b.dataset.toggle));}
+
+      function openCook(){if(cutscene.active)return;renderRecipes();dom.modalCook.classList.remove('hidden');sound.tone(500,.1);}function closeCook(){dom.modalCook.classList.add('hidden');sound.tone(380,.08);} 
+      function renderRecipes(){const ready=RECIPES.find(canCook);dom.quickCookBar.classList.toggle('hidden',!ready);dom.quickCookLabel.textContent=ready?`${ready.name} is ready!`:'No recipe ready';if(ready)dom.quickCookBar.dataset.recipe=ready.id;dom.recipesList.innerHTML=RECIPES.map(r=>{const ok=canCook(r),req=Object.entries(r.req).map(([id,n])=>`<span class="text-[10px] px-1.5 py-1 rounded-lg ${state.inventory[id]>=n?'bg-emerald-100 text-emerald-800':'bg-rose-50 text-rose-700'}">${POKEMON_DATA[id].emoji} ${POKEMON_DATA[id].short} ${state.inventory[id]||0}/${n}</span>`).join('');return `<div class="bg-white rounded-2xl p-3 border-2 ${ok?'border-amber-400':'border-amber-200'}"><div class="flex items-center justify-between gap-2"><div class="flex items-center gap-2"><span class="text-3xl">${r.emoji}</span><div><h4 class="font-display font-bold text-base">${r.name}</h4><span class="text-[11px] font-extrabold text-amber-700">+${r.strength.toLocaleString()}</span></div></div><button type="button" data-cook="${r.id}" ${ok?'':'disabled'} class="shrink-0 px-4 py-2.5 rounded-2xl text-xs font-bold ${ok?'bg-orange-500 text-white':'bg-slate-200 text-slate-400'}">Cook</button></div><div class="flex flex-wrap gap-1.5 mt-2">${req}</div></div>`;}).join('');dom.recipesList.querySelectorAll('[data-cook]').forEach(b=>b.onclick=()=>{const r=RECIPES.find(x=>x.id===b.dataset.cook);if(r&&canCook(r))cook(r);});}
+
+      const cutscene={active:false,timer:0};function cook(r){Object.entries(r.req).forEach(([id,n])=>state.inventory[id]=Math.max(0,state.inventory[id]-n));const extra=Math.random()<.25,gain=extra?r.strength*2:r.strength,old=rankInfo(state.strength);state.strength+=gain;state.mealsCooked++;const next=rankInfo(state.strength);saveState();renderBag();renderHud();dom.modalCook.classList.add('hidden');cutscene.active=true;cutscene.timer=0;dom.bottomDock.classList.add('translate-y-full');dom.celebrationBanner.classList.remove('hidden');dom.celebCritBadge.classList.toggle('hidden',!extra);dom.celebStatusText.textContent=`Feast: ${r.name}!`;dom.celebStrengthText.textContent=`+${gain.toLocaleString()} Snorlax Strength`;dom.celebRankupText.classList.toggle('hidden',next.index<=old.index);dom.celebRankupText.textContent=next.index>old.index?`Rank Up! ${old.current.name} ➔ ${next.current.name}!`:'';sound.chime();}
+
+      document.getElementById('btn-open-party').onclick=openParty;document.getElementById('btn-close-party').onclick=closeParty;document.getElementById('btn-done-party').onclick=closeParty;dom.modalParty.onclick=e=>{if(e.target===dom.modalParty)closeParty();};document.getElementById('btn-open-cook').onclick=openCook;document.getElementById('btn-close-cook').onclick=closeCook;document.getElementById('btn-close-cook-bottom').onclick=closeCook;dom.modalCook.onclick=e=>{if(e.target===dom.modalCook)closeCook();};document.getElementById('btn-quick-cook').onclick=()=>{const r=RECIPES.find(x=>x.id===dom.quickCookBar.dataset.recipe);if(r&&canCook(r))cook(r);};document.getElementById('btn-cook-to-party').onclick=()=>{closeCook();openParty();};document.getElementById('btn-theme-toggle').onclick=()=>{state.isNight=!state.isNight;saveState();renderHud();};document.getElementById('btn-sound-toggle').onclick=()=>{state.muted=!state.muted;sound.muted=state.muted;saveState();renderHud();};document.getElementById('btn-reset-open').onclick=()=>dom.modalReset.classList.remove('hidden');document.getElementById('btn-reset-cancel').onclick=()=>dom.modalReset.classList.add('hidden');document.getElementById('btn-reset-confirm').onclick=()=>{const night=state.isNight,muted=state.muted;state=createDefaultState();state.isNight=night;state.muted=muted;saveState();syncParty();renderHud();renderBag();dom.modalReset.classList.add('hidden');showToast('Campsite progress reset!');};
+
+      function handleResize(){const w=innerWidth,h=innerHeight,aspect=w/Math.max(h,1);camera.aspect=aspect;camera.fov=aspect<1?47:43;fixedRadius=aspect<1?Math.min(26.5,Math.max(18,16.2/Math.max(aspect,.46))):16.5;camera.updateProjectionMatrix();renderer.setSize(w,h);applyCamera();}addEventListener('resize',handleResize);
+
+      let last=performance.now();function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-last)/1000),elapsed=now*.001;last=now;if(!cutscene.active)wander(dt,elapsed);const night=state.isNight?1:0;scene.background.lerp(state.isNight?new THREE.Color(0x0f172a):new THREE.Color(0x7dd3fc),dt*3.5);dirSunIntensity=THREE.MathUtils.lerp(sun.intensity,state.isNight?.35:1.25,dt*3.5);sun.intensity=dirSunIntensity;hemi.intensity=THREE.MathUtils.lerp(hemi.intensity,state.isNight?.42:.98,dt*3.5);starMat.opacity=THREE.MathUtils.lerp(starMat.opacity,night*.9,dt*3.5);fireLight.intensity=(state.isNight?2.4:1)+Math.sin(elapsed*14)*.18;flames.forEach((f,i)=>{f.scale.y=.85+Math.sin(elapsed*16+i*2)*.25;f.rotation.z=Math.sin(elapsed*12+i)*.12;});if(cutscene.active){cutscene.timer+=dt;snorlax.body.position.y=1.06+Math.abs(Math.sin(cutscene.timer*7))*0.22;snorlax.head.rotation.z=Math.sin(cutscene.timer*9)*.14;entities.forEach((e,i)=>{e.body.position.y=Math.abs(Math.sin(cutscene.timer*7+i*.4))*.55;e.body.rotation.z=Math.sin(cutscene.timer*8+i*.6)*.18;});if(cutscene.timer>=3.2){cutscene.active=false;cutscene.timer=0;dom.bottomDock.classList.remove('translate-y-full');dom.celebrationBanner.classList.add('hidden');snorlax.body.position.y=1.06;snorlax.head.rotation.z=0;entities.forEach(e=>{e.body.position.y=0;e.body.rotation.z=0;});}}else{snorlax.belly.scale.set(1.02+Math.sin(elapsed*2.1)*.035,.66+Math.sin(elapsed*2.1)*.055,1.06);}applyCamera();renderer.render(scene,camera);}
+
+      window.onload=()=>{handleResize();syncParty();renderHud();renderBag();last=performance.now();animate(last);};
+    })();
+  </script>
+</body>
+</html>
