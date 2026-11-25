@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Pup Ice Cream Party!</title>
+  <meta name="description" content="Tap the rescue pups to give them matching ice cream cones—and watch the green recycling pup grab stinky treats from the trash can!" />
+  <meta name="theme-color" content="#0288D1" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Pup Party" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png" />
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #4FC3F7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      touch-action: manipulation;
+    }
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    .hud {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      left: max(10px, env(safe-area-inset-left));
+      right: max(10px, env(safe-area-inset-right));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hud-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .pill {
+      background: rgba(255, 255, 255, 0.94);
+      border: 3px solid #263238;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 800;
+      font-size: 15px;
+      color: #263238;
+      box-shadow: 0 3px 0 #263238;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform 0.08s ease;
+    }
+    .pill:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #263238;
+    }
+    .title-pill {
+      cursor: default;
+      padding: 4px 12px 4px 6px;
+    }
+    .title-pill img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #263238;
+    }
+    .score-pill {
+      background: #FFF9C4;
+    }
+    .bell-pill {
+      background: #FFE082;
+    }
+    .install-pill {
+      background: #00E676;
+      color: #1B3B2B;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 50;
+    }
+    .modal-card {
+      background: #FFFFFF;
+      border: 4px solid #263238;
+      border-radius: 24px;
+      max-width: 380px;
+      width: 100%;
+      padding: 22px;
+      box-shadow: 0 8px 0 #263238;
+      text-align: center;
+      color: #263238;
+    }
+    .modal-card img {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      border: 3px solid #263238;
+      margin-bottom: 10px;
+    }
+    .modal-card h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .modal-card p {
+      margin: 0 0 14px;
+      font-size: 15px;
+      line-height: 1.45;
+      color: #455A64;
+    }
+    .steps {
+      text-align: left;
+      background: #F1F8E9;
+      border: 2px solid #AED581;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .btn-primary {
+      width: 100%;
+      background: #0288D1;
+      color: #FFFFFF;
+      border: 3px solid #263238;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 800;
+      box-shadow: 0 4px 0 #263238;
+      cursor: pointer;
+    }
+    .btn-primary:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #263238;
+    }
+    @media (max-width: 520px) {
+      .title-text {
+        display: none;
+      }
+      .pill {
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-group">
+      <div class="pill title-pill">
+        <img src="./icon-192.png" alt="Pup Party" />
+        <span class="title-text">Pup Ice Cream Party!</span>
+      </div>
+      <div class="pill score-pill" id="scoreBadge">🍦 <span id="scoreVal">0</span></div>
+    </div>
+    <div class="hud-group">
+      <button class="pill bell-pill" id="bellBtn" title="Serve All Pups">🔔 <span class="title-text">Serve All</span></button>
+      <button class="pill" id="soundBtn" title="Toggle Sound">🔊</button>
+      <button class="pill install-pill" id="installBtn" title="Install App">📲 Install</button>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div class="modal-backdrop hidden" id="installModal">
+    <div class="modal-card">
+      <img src="./icon-192.png" alt="Pup Party Icon" />
+      <h2>Install Pup Party App</h2>
+      <p>Play full-screen right from your phone's home screen—even offline!</p>
+      <div class="steps">
+        <strong>In Google Chrome (Android):</strong><br />
+        1. Tap the <strong>⋮</strong> menu in the top-right corner.<br />
+        2. Tap <strong>Add to home screen</strong>.<br />
+        3. Choose <strong>Install</strong> to add the Pup Party app icon!
+      </div>
+      <button class="btn-primary" id="closeModalBtn">Got It!</button>
+    </div>
+  </div>
+
+  <script>
+    // Register Service Worker for offline play & native Chrome WebAPK install
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // PWA Install Prompt Handling
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
+    const installModal = document.getElementById('installModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    function isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    if (isStandalone()) {
+      installBtn.classList.add('hidden');
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.classList.remove('hidden');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      installBtn.classList.add('hidden');
+      installModal.classList.add('hidden');
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          deferredPrompt = null;
+          installBtn.classList.add('hidden');
+        }
+      } else {
+        installModal.classList.remove('hidden');
+      }
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      installModal.classList.add('hidden');
+    });
+    installModal.addEventListener('click', (e) => {
+      if (e.target === installModal) installModal.classList.add('hidden');
+    });
+
+    // Sound Effects via Web Audio API (no external sound files needed)
+    let soundEnabled = true;
+    let audioCtx = null;
+    const soundBtn = document.getElementById('soundBtn');
+
+    soundBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+    });
+
+    function getAudioCtx() {
+      if (!soundEnabled) return null;
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      if (type === 'bark') {
+        // Playful double-yip + pop
+        [0, 0.11].forEach((offset, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(i === 0 ? 340 : 420, now + offset);
+          osc.frequency.exponentialRampToValueAtTime(i === 0 ? 540 : 640, now + offset + 0.05);
+          osc.frequency.exponentialRampToValueAtTime(260, now + offset + 0.09);
+          gain.gain.setValueAtTime(0.18, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.095);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.1);
+        });
+      } else if (type === 'trash') {
+        // Metallic trash lid clank + goofy slide
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(620, now + 0.16);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.28);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.31);
+      } else if (type === 'chomp') {
+        // 3 playful chomps + happy chime
+        [0, 0.16, 0.32].forEach((offset) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(480, now + offset);
+          osc.frequency.exponentialRampToValueAtTime(190, now + offset + 0.11);
+          gain.gain.setValueAtTime(0.2, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.13);
+        });
+        // Sparkle chime
+        const chime = ctx.createOscillator();
+        const cGain = ctx.createGain();
+        chime.type = 'triangle';
+        chime.frequency.setValueAtTime(784, now + 0.45);
+        chime.frequency.setValueAtTime(1046.5, now + 0.56);
+        cGain.gain.setValueAtTime(0.16, now + 0.45);
+        cGain.gain.exponentialRampToValueAtTime(0.001, now + 0.78);
+        chime.connect(cGain);
+        cGain.connect(ctx.destination);
+        chime.start(now + 0.45);
+        chime.stop(now + 0.8);
+      } else if (type === 'stinky_chomp') {
+        // Chomps + comical low horn
+        [0, 0.16, 0.32].forEach((offset) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(300, now + offset);
+          osc.frequency.exponentialRampToValueAtTime(140, now + offset + 0.11);
+          gain.gain.setValueAtTime(0.11, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.12);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.13);
+        });
+        const horn = ctx.createOscillator();
+        const hGain = ctx.createGain();
+        horn.type = 'sawtooth';
+        horn.frequency.setValueAtTime(196, now + 0.46);
+        horn.frequency.linearRampToValueAtTime(130.8, now + 0.76);
+        hGain.gain.setValueAtTime(0.14, now + 0.46);
+        hGain.gain.exponentialRampToValueAtTime(0.001, now + 0.82);
+        horn.connect(hGain);
+        hGain.connect(ctx.destination);
+        horn.start(now + 0.46);
+        horn.stop(now + 0.84);
+      }
+    }
+
+    // Canvas & Game Setup
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreValEl = document.getElementById('scoreVal');
+    const bellBtn = document.getElementById('bellBtn');
+
+    let score = 0;
+    try {
+      score = parseInt(localStorage.getItem('pup_party_score') || '0', 10) || 0;
+    } catch (e) {}
+    scoreValEl.textContent = score;
+
+    function addScore(n) {
+      score += n;
+      scoreValEl.textContent = score;
+      try {
+        localStorage.setItem('pup_party_score', String(score));
+      } catch (e) {}
+    }
+
+    function roundRectPath(c, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      c.beginPath();
+      c.moveTo(x + radius, y);
+      c.arcTo(x + w, y, x + w, y + h, radius);
+      c.arcTo(x + w, y + h, x, y + h, radius);
+      c.arcTo(x, y + h, x, y, radius);
+      c.arcTo(x, y, x + w, y, radius);
+      c.closePath();
+    }
+
+    const TRASH_ITEMS = ['fishbone', 'banana', 'apple', 'can'];
+
+    // 6 Rescue Pups matching their signature colors & roles
+    const pups = [
+      {
+        id: 'blue',
+        role: 'police',
+        fur: '#8D5524',
+        muzzle: '#E8B476',
+        gear: '#1E88E5',
+        gearDark: '#0D47A1',
+        accent: '#FFD54F',
+        scoop: '#29B6F6',
+        scoopHighlight: '#B3E5FC',
+        isTrashPup: false
+      },
+      {
+        id: 'red',
+        role: 'fire',
+        fur: '#F5F5F5',
+        muzzle: '#FFFFFF',
+        gear: '#E53935',
+        gearDark: '#B71C1C',
+        accent: '#FFD54F',
+        scoop: '#EF5350',
+        scoopHighlight: '#FFCDD2',
+        isTrashPup: false
+      },
+      {
+        id: 'yellow',
+        role: 'builder',
+        fur: '#D7A86E',
+        muzzle: '#F5DEC0',
+        gear: '#FDD835',
+        gearDark: '#F57F17',
+        accent: '#37474F',
+        scoop: '#FFEE58',
+        scoopHighlight: '#FFF9C4',
+        isTrashPup: false
+      },
+      {
+        id: 'pink',
+        role: 'pilot',
+        fur: '#D4A373',
+        muzzle: '#F3D5B5',
+        gear: '#EC407A',
+        gearDark: '#AD1457',
+        accent: '#80DEEA',
+        scoop: '#F48FB1',
+        scoopHighlight: '#FCE4EC',
+        isTrashPup: false
+      },
+      {
+        id: 'orange',
+        role: 'water',
+        fur: '#C68642',
+        muzzle: '#E6B88A',
+        gear: '#FB8C00',
+        gearDark: '#E65100',
+        accent: '#4FC3F7',
+        scoop: '#FFA726',
+        scoopHighlight: '#FFE0B2',
+        isTrashPup: false
+      },
+      {
+        id: 'green',
+        role: 'recycle',
+        fur: '#A1887F',
+        muzzle: '#D7CCC8',
+        gear: '#43A047',
+        gearDark: '#1B5E20',
+        accent: '#A5D6A7',
+        scoop: '#7CB342',
+        scoopHighlight: '#DCEDC8',
+        isTrashPup: true
+      }
+    ].map((p, idx) => ({
+      ...p,
+      index: idx,
+      state: 'hungry', // 'hungry' | 'holding' | 'eating' | 'happy'
+      stateTimer: 0,
+      bounce: 0,
+      treatProgress: 0,
+      bites: 0,
+      trashType: 'fishbone',
+      x: 0,
+      y: 0,
+      hitR: 64
+    }));
+
+    const particles = [];
+    let trashLidAngle = 0;
+
+    function spawnParticles(x, y, color, count, kind = 'circle') {
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+        const speed = 1.6 + Math.random() * 3.2;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1.5,
+          life: 1,
+          decay: 0.022 + Math.random() * 0.015,
+          size: 5 + Math.random() * 5,
+          color,
+          kind
+        });
+      }
+    }
+
+    function giveTreat(pup) {
+      if (pup.state !== 'hungry') return false;
+      pup.state = 'holding';
+      pup.stateTimer = 0;
+      pup.treatProgress = 0;
+      pup.bounce = 1;
+      if (pup.isTrashPup) {
+        pup.trashType = TRASH_ITEMS[Math.floor(Math.random() * TRASH_ITEMS.length)];
+        trashLidAngle = 1;
+        playSound('trash');
+        spawnParticles(pup.x + 42, pup.y - 10, '#8BC34A', 8, 'stink');
+      } else {
+        playSound('bark');
+        spawnParticles(pup.x, pup.y - 30, pup.scoop, 10, 'star');
+      }
+      return true;
+    }
+
+    function eatTreat(pup) {
+      if (pup.state !== 'holding') return false;
+      pup.state = 'eating';
+      pup.stateTimer = 0;
+      pup.bites = 0;
+      pup.bounce = 1;
+      if (pup.isTrashPup) {
+        playSound('stinky_chomp');
+      } else {
+        playSound('chomp');
+      }
+      return true;
+    }
+
+    function handlePupTap(pup) {
+      if (pup.state === 'hungry') {
+        giveTreat(pup);
+      } else if (pup.state === 'holding') {
+        eatTreat(pup);
+      } else {
+        // Gentle happy wiggle if tapped mid-chomp or happy
+        pup.bounce = 0.7;
+      }
+    }
+
+    bellBtn.addEventListener('click', () => {
+      let servedAny = false;
+      pups.forEach((p, idx) => {
+        if (p.state === 'hungry') {
+          servedAny = true;
+          setTimeout(() => giveTreat(p), idx * 70);
+        }
+      });
+      if (!servedAny) {
+        pups.forEach((p, idx) => {
+          if (p.state === 'holding') {
+            setTimeout(() => eatTreat(p), idx * 70);
+          }
+        });
+      }
+    });
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.max(320, window.innerWidth);
+      const h = Math.max(420, window.innerHeight);
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function getPointerPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches && e.touches[0] ? e.touches[0] : e;
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const pos = getPointerPos(e);
+      let closest = null;
+      let bestDist = Infinity;
+      for (const pup of pups) {
+        const dx = pos.x - pup.x;
+        const dy = pos.y - (pup.y - 10);
+        const dist = Math.hypot(dx, dy);
+        if (dist <= pup.hitR && dist < bestDist) {
+          closest = pup;
+          bestDist = dist;
+        }
+      }
+      if (closest) {
+        handlePupTap(closest);
+      }
+    });
+
+    // Drawing Helpers
+    function drawCloud(x, y, s) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+      ctx.beginPath();
+      ctx.arc(x, y, 22 * s, 0, Math.PI * 2);
+      ctx.arc(x + 20 * s, y - 6 * s, 26 * s, 0, Math.PI * 2);
+      ctx.arc(x + 44 * s, y, 20 * s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBackground(w, h, time) {
+      // Sky
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.42);
+      skyGrad.addColorStop(0, '#29B6F6');
+      skyGrad.addColorStop(1, '#B3E5FC');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, h * 0.42);
+
+      // Sun
+      const sunX = w * 0.14;
+      const sunY = h * 0.14;
+      ctx.fillStyle = 'rgba(255, 238, 88, 0.35)';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 46 + Math.sin(time * 2) * 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFD54F';
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Drifting clouds
+      const drift1 = ((time * 12) % (w + 160)) - 80;
+      const drift2 = (((time * 8) + w * 0.5) % (w + 160)) - 80;
+      drawCloud(drift1, h * 0.15, 0.9);
+      drawCloud(drift2, h * 0.11, 0.75);
+
+      const horizonY = Math.max(150, h * 0.31);
+
+      // Park Grass
+      const grassGrad = ctx.createLinearGradient(0, horizonY, 0, h);
+      grassGrad.addColorStop(0, '#66BB6A');
+      grassGrad.addColorStop(1, '#388E3C');
+      ctx.fillStyle = grassGrad;
+      ctx.fillRect(0, horizonY, w, h - horizonY);
+
+      // Wooden Park Fence
+      ctx.fillStyle = '#A1887F';
+      ctx.strokeStyle = '#3E2723';
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(0, horizonY - 22, w, 8);
+      ctx.strokeRect(-2, horizonY - 22, w + 4, 8);
+      for (let fx = 16; fx < w; fx += 44) {
+        roundRectPath(ctx, fx, horizonY - 34, 14, 36, 4);
+        ctx.fillStyle = '#BCAAA4';
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Party Bunting Flags
+      const flagColors = ['#EF5350', '#FFEE58', '#29B6F6', '#EC407A', '#66BB6A'];
+      ctx.strokeStyle = '#37474F';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, horizonY - 46);
+      ctx.quadraticCurveTo(w * 0.25, horizonY - 24, w * 0.5, horizonY - 46);
+      ctx.quadraticCurveTo(w * 0.75, horizonY - 24, w, horizonY - 46);
+      ctx.stroke();
+
+      for (let i = 0; i < 16; i++) {
+        const t = (i + 0.5) / 16;
+        const bx = w * t;
+        const sag = Math.sin((t * 2) * Math.PI) * 16;
+        const by = horizonY - 46 + sag;
+        ctx.fillStyle = flagColors[i % flagColors.length];
+        ctx.beginPath();
+        ctx.moveTo(bx - 8, by);
+        ctx.lineTo(bx + 8, by);
+        ctx.lineTo(bx, by + 16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Ice Cream Cart at center horizon
+      const cartX = w * 0.5;
+      const cartY = horizonY + 8;
+      // Plaza circle under cart
+      ctx.fillStyle = '#D7CCC8';
+      ctx.beginPath();
+      ctx.ellipse(cartX, cartY + 12, 74, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cart poles
+      ctx.strokeStyle = '#37474F';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cartX - 38, cartY - 12);
+      ctx.lineTo(cartX - 38, cartY - 46);
+      ctx.moveTo(cartX + 38, cartY - 12);
+      ctx.lineTo(cartX + 38, cartY - 46);
+      ctx.stroke();
+
+      // Cart body
+      roundRectPath(ctx, cartX - 46, cartY - 20, 92, 30, 8);
+      ctx.fillStyle = '#80DEEA';
+      ctx.fill();
+      ctx.stroke();
+
+      // Ice cream tubs display
+      const tubColors = ['#29B6F6', '#EF5350', '#FFEE58', '#F48FB1', '#FFA726'];
+      tubColors.forEach((tc, idx) => {
+        ctx.fillStyle = tc;
+        ctx.beginPath();
+        ctx.arc(cartX - 28 + idx * 14, cartY - 20, 6, Math.PI, 0);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Canopy
+      const stripes = ['#EF5350', '#FFFFFF', '#29B6F6', '#FFFFFF', '#FFEE58', '#FFFFFF', '#EC407A'];
+      const sw = 104 / stripes.length;
+      stripes.forEach((sc, idx) => {
+        roundRectPath(ctx, cartX - 52 + idx * sw, cartY - 62, sw + 1, 18, 5);
+        ctx.fillStyle = sc;
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Wheels
+      [-28, 28].forEach((wx) => {
+        ctx.fillStyle = '#37474F';
+        ctx.beginPath();
+        ctx.arc(cartX + wx, cartY + 11, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ECEFF1';
+        ctx.beginPath();
+        ctx.arc(cartX + wx, cartY + 11, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawIceCreamCone(x, y, scoopColor, highlightColor, role, bites) {
+      if (bites >= 3) return;
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Waffle Cone
+      ctx.fillStyle = '#E6A15C';
+      ctx.strokeStyle = '#26180D';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(-11, 0);
+      ctx.lineTo(11, 0);
+      ctx.lineTo(0, 26);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Waffle grid lines
+      ctx.strokeStyle = '#B87333';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-5, 0);
+      ctx.lineTo(2, 18);
+      ctx.moveTo(5, 0);
+      ctx.lineTo(-2, 18);
+      ctx.moveTo(-7, 8);
+      ctx.lineTo(7, 8);
+      ctx.stroke();
+
+      // Ice cream scoop (shrinks as bites are taken)
+      if (bites < 2) {
+        const r = bites === 0 ? 14 : 10;
+        const sy = bites === 0 ? -7 : -3;
+        ctx.fillStyle = scoopColor;
+        ctx.strokeStyle = '#26180D';
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.arc(0, sy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Scoop ruffle base
+        ctx.beginPath();
+        ctx.arc(-8, sy + r * 0.55, 4.5, 0, Math.PI * 2);
+        ctx.arc(0, sy + r * 0.65, 5, 0, Math.PI * 2);
+        ctx.arc(8, sy + r * 0.55, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Gloss highlight
+        ctx.fillStyle = highlightColor;
+        ctx.beginPath();
+        ctx.arc(-4, sy - 4, r * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Signature topping on unbitten scoop
+        if (bites === 0) {
+          if (role === 'fire') {
+            // Cherry on top!
+            ctx.fillStyle = '#C62828';
+            ctx.beginPath();
+            ctx.arc(0, sy - r - 2, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          } else if (role === 'pilot') {
+            // Whipped swirl
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(0, sy - r - 1, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawTrashItem(x, y, trashType, bites, time) {
+      if (bites >= 3) return;
+      ctx.save();
+      ctx.translate(x, y);
+      const scale = bites === 0 ? 1 : bites === 1 ? 0.72 : 0.45;
+      ctx.scale(scale, scale);
+
+      ctx.strokeStyle = '#26180D';
+      ctx.lineWidth = 2.4;
+
+      if (trashType === 'fishbone') {
+        ctx.fillStyle = '#ECEFF1';
+        // Spine
+        ctx.beginPath();
+        ctx.moveTo(-14, 0);
+        ctx.lineTo(12, 0);
+        ctx.stroke();
+        // Ribs
+        [-6, 0, 6].forEach((rx) => {
+          ctx.beginPath();
+          ctx.moveTo(rx, -7);
+          ctx.lineTo(rx, 7);
+          ctx.stroke();
+        });
+        // Fish head
+        ctx.beginPath();
+        ctx.arc(13, 0, 6, -Math.PI * 0.6, Math.PI * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        // Tail
+        ctx.beginPath();
+        ctx.moveTo(-14, 0);
+        ctx.lineTo(-20, -6);
+        ctx.lineTo(-20, 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else if (trashType === 'banana') {
+        ctx.fillStyle = '#FDD835';
+        ctx.beginPath();
+        ctx.moveTo(0, -12);
+        ctx.quadraticCurveTo(-16, -2, -14, 12);
+        ctx.quadraticCurveTo(-4, 4, 0, -4);
+        ctx.quadraticCurveTo(4, 4, 14, 12);
+        ctx.quadraticCurveTo(16, -2, 0, -12);
+        ctx.fill();
+        ctx.stroke();
+        // Brown stem
+        ctx.fillStyle = '#5D4037';
+        ctx.fillRect(-2.5, -16, 5, 5);
+      } else if (trashType === 'apple') {
+        // Top & bottom red caps
+        ctx.fillStyle = '#E53935';
+        ctx.beginPath();
+        ctx.ellipse(0, -10, 10, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(0, 10, 10, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        // Core
+        ctx.fillStyle = '#FFF9C4';
+        ctx.fillRect(-3.5, -6, 7, 12);
+        ctx.strokeRect(-3.5, -6, 7, 12);
+      } else {
+        // Dented tin can
+        ctx.fillStyle = '#B0BEC5';
+        roundRectPath(ctx, -10, -11, 20, 22, 3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = '#546E7A';
+        ctx.beginPath();
+        ctx.moveTo(-9, -4);
+        ctx.lineTo(9, -4);
+        ctx.moveTo(-9, 4);
+        ctx.lineTo(9, 4);
+        ctx.stroke();
+      }
+
+      // Wavy green stink lines
+      ctx.strokeStyle = '#7CB342';
+      ctx.lineWidth = 2;
+      [-8, 8].forEach((sx, idx) => {
+        const wave = Math.sin(time * 6 + idx) * 3;
+        ctx.beginPath();
+        ctx.moveTo(sx, -16);
+        ctx.quadraticCurveTo(sx + wave, -22, sx, -28);
+        ctx.stroke();
+      });
+
+      ctx.restore();
+    }
+
+    function drawTrashCan(x, y, lidOpenAmount) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = '#263238';
+      ctx.lineWidth = 2.6;
+
+      // Metal Can Body
+      ctx.fillStyle = '#90A4AE';
+      ctx.beginPath();
+      ctx.moveTo(-16, -14);
+      ctx.lineTo(16, -14);
+      ctx.lineTo(13, 20);
+      ctx.lineTo(-13, 20);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Vertical ridges
+      ctx.strokeStyle = '#546E7A';
+      ctx.lineWidth = 1.8;
+      [-6, 0, 6].forEach((rx) => {
+        ctx.beginPath();
+        ctx.moveTo(rx, -10);
+        ctx.lineTo(rx * 0.85, 16);
+        ctx.stroke();
+      });
+
+      // Hinged Lid
+      ctx.save();
+      ctx.translate(16, -15);
+      ctx.rotate(lidOpenAmount * 1.15);
+      ctx.strokeStyle = '#263238';
+      ctx.lineWidth = 2.6;
+      ctx.fillStyle = '#B0BEC5';
+      roundRectPath(ctx, -34, -5, 36, 6, 3);
+      ctx.fill();
+      ctx.stroke();
+      // Lid handle
+      roundRectPath(ctx, -21, -9, 10, 4, 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    function drawPup(pup, scale, time) {
+      ctx.save();
+      const bounceY = Math.sin(pup.bounce * Math.PI) * 14;
+      const eatWiggle = pup.state === 'eating' ? Math.sin(time * 28) * 3 : 0;
+      ctx.translate(pup.x + eatWiggle, pup.y - bounceY);
+      ctx.scale(scale, scale);
+
+      const outline = '#26180D';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = outline;
+
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+      ctx.beginPath();
+      ctx.ellipse(0, 42 + bounceY * 0.5, 32, 9, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wagging tail
+      const wag = Math.sin(time * (pup.state === 'happy' || pup.state === 'eating' ? 18 : 6)) * 0.35;
+      ctx.save();
+      ctx.translate(-22, 24);
+      ctx.rotate(-0.5 + wag);
+      ctx.fillStyle = pup.fur;
+      roundRectPath(ctx, -16, -5, 18, 10, 5);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Body / Uniform Vest
+      roundRectPath(ctx, -22, 4, 44, 34, 14);
+      ctx.fillStyle = pup.gear;
+      ctx.fill();
+      ctx.stroke();
+
+      // Chest fur patch
+      ctx.fillStyle = pup.muzzle;
+      ctx.beginPath();
+      ctx.moveTo(-9, 5);
+      ctx.lineTo(9, 5);
+      ctx.lineTo(0, 22);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Collar & Pup Tag
+      roundRectPath(ctx, -19, 1, 38, 7, 3.5);
+      ctx.fillStyle = pup.gearDark;
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = pup.accent;
+      ctx.beginPath();
+      ctx.arc(0, 8, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Recycle symbol on green pup's vest
+      if (pup.isTrashPup) {
+        ctx.fillStyle = '#DCEDC8';
+        ctx.beginPath();
+        ctx.arc(-11, 22, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Feet / Back Paws
+      [-14, 14].forEach((fx) => {
+        ctx.fillStyle = pup.muzzle;
+        ctx.beginPath();
+        ctx.ellipse(fx, 38, 10, 6.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Ears (role-specific silhouettes!)
+      if (pup.role === 'police') {
+        // Pointy shepherd ears
+        [[-1, 1], [1, 1]].forEach(([dir]) => {
+          ctx.fillStyle = pup.fur;
+          ctx.beginPath();
+          ctx.moveTo(dir * 12, -32);
+          ctx.lineTo(dir * 27, -54);
+          ctx.lineTo(dir * 28, -24);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        });
+      } else if (pup.role === 'fire' || pup.role === 'water' || pup.role === 'builder') {
+        // Floppy hound/lab ears
+        [-1, 1].forEach((dir) => {
+          ctx.fillStyle = pup.role === 'fire' ? '#26180D' : pup.fur;
+          ctx.beginPath();
+          ctx.ellipse(dir * 27, -20, 8, 15, dir * 0.25, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+      } else if (pup.role === 'pilot') {
+        // Curly cockapoo ears
+        [-1, 1].forEach((dir) => {
+          ctx.fillStyle = pup.fur;
+          [-26, -18, -10].forEach((ey, idx) => {
+            ctx.beginPath();
+            ctx.arc(dir * (26 + (idx % 2) * 3), ey, 8.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          });
+        });
+      } else if (pup.role === 'recycle') {
+        // Asymmetric scruffy ears (one up, one floppy)
+        ctx.fillStyle = pup.fur;
+        ctx.beginPath();
+        ctx.moveTo(-12, -32);
+        ctx.lineTo(-26, -52);
+        ctx.lineTo(-27, -24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(27, -22, 8, 13, 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Head
+      ctx.fillStyle = pup.fur;
+      ctx.beginPath();
+      ctx.arc(0, -22, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Dalmatian spots for Fire Pup
+      if (pup.role === 'fire') {
+        ctx.fillStyle = '#26180D';
+        ctx.beginPath();
+        ctx.arc(-16, -24, 4, 0, Math.PI * 2);
+        ctx.arc(17, -16, 3.5, 0, Math.PI * 2);
+        ctx.arc(-12, -11, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Muzzle
+      ctx.fillStyle = pup.muzzle;
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 15, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Scruffy beard tufts on Green Pup
+      if (pup.isTrashPup) {
+        ctx.fillStyle = pup.muzzle;
+        ctx.beginPath();
+        ctx.moveTo(-9, -6);
+        ctx.lineTo(-4, 1);
+        ctx.lineTo(0, -4);
+        ctx.lineTo(4, 1);
+        ctx.lineTo(9, -6);
+        ctx.fill();
+      }
+
+      // Eyes (happy ^ ^ when eating or happy!)
+      if (pup.state === 'eating' || pup.state === 'happy') {
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 3;
+        [-9, 9].forEach((ex) => {
+          ctx.beginPath();
+          ctx.arc(ex, -23, 5, Math.PI * 1.1, Math.PI * 1.9);
+          ctx.stroke();
+        });
+      } else {
+        [-9, 9].forEach((ex) => {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(ex, -24, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = outline;
+          ctx.beginPath();
+          ctx.arc(ex, -23.5, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.beginPath();
+          ctx.arc(ex - 1.2, -25, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      // Nose
+      ctx.fillStyle = outline;
+      roundRectPath(ctx, -4.5, -18.5, 9, 5.5, 2.5);
+      ctx.fill();
+
+      // Mouth (chomp animation when eating!)
+      const chompOpen = pup.state === 'eating' ? Math.abs(Math.sin(time * 22)) : (pup.state === 'happy' ? 0.8 : 0.25);
+      if (chompOpen > 0.35) {
+        ctx.fillStyle = '#880E4F';
+        ctx.beginPath();
+        ctx.arc(0, -11, 6.5 * chompOpen + 2, 0, Math.PI);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(-3.5, -12, 3.5, 0.1, Math.PI - 0.1);
+        ctx.arc(3.5, -12, 3.5, 0.1, Math.PI - 0.1);
+        ctx.stroke();
+      }
+
+      // Hats / Helmets
+      ctx.fillStyle = pup.gear;
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 2.8;
+      if (pup.role === 'police') {
+        ctx.beginPath();
+        ctx.arc(0, -36, 19, Math.PI, 0);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = pup.gearDark;
+        roundRectPath(ctx, -20, -38, 40, 6, 3);
+        ctx.fill();
+        ctx.stroke();
+      } else if (pup.role === 'fire' || pup.role === 'builder') {
+        ctx.beginPath();
+        ctx.arc(0, -35, 20, Math.PI, 0);
+        ctx.fill();
+        ctx.stroke();
+        roundRectPath(ctx, -24, -37, 48, 6, 3);
+        ctx.fill();
+        ctx.stroke();
+      } else if (pup.role === 'pilot') {
+        ctx.beginPath();
+        ctx.arc(0, -36, 18, Math.PI, 0);
+        ctx.fill();
+        ctx.stroke();
+        // Goggles
+        [-8, 8].forEach((gx) => {
+          ctx.fillStyle = pup.accent;
+          roundRectPath(ctx, gx - 6, -43, 12, 8, 3);
+          ctx.fill();
+          ctx.stroke();
+        });
+      } else {
+        // Baseball cap for Water & Recycle pups
+        ctx.beginPath();
+        ctx.arc(0, -36, 18, Math.PI, 0);
+        ctx.fill();
+        ctx.stroke();
+        roundRectPath(ctx, -16, -38, 34, 5.5, 2.5);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Hat badge
+      ctx.fillStyle = pup.accent;
+      ctx.beginPath();
+      ctx.arc(0, -43, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Metal Trash Can next to Green Pup
+      if (pup.isTrashPup) {
+        drawTrashCan(46, 20, trashLidAngle);
+      }
+
+      // Treat held in paw (or lifted to mouth while eating!)
+      if (pup.state === 'holding' || pup.state === 'eating') {
+        const popScale = Math.min(1, pup.treatProgress * 1.25);
+        const eatLift = pup.state === 'eating' ? -16 : 0;
+        ctx.save();
+        ctx.translate(18, 6 + eatLift);
+        ctx.scale(popScale, popScale);
+        if (pup.isTrashPup) {
+          drawTrashItem(0, 0, pup.trashType, pup.bites, time);
+        } else {
+          drawIceCreamCone(0, 0, pup.scoop, pup.scoopHighlight, pup.role, pup.bites);
+        }
+        ctx.restore();
+      }
+
+      // Front Paw holding treat
+      ctx.fillStyle = pup.muzzle;
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 2.6;
+      const pawY = (pup.state === 'holding' || pup.state === 'eating') ? 14 : 24;
+      ctx.beginPath();
+      ctx.arc(17, pawY, 7.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Thought / Action Bubble above pup
+      const floatY = Math.sin(time * 4 + pup.index) * 3;
+      if (pup.state === 'hungry') {
+        // Color-matched craving bubble
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+        ctx.strokeStyle = pup.gear;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(-28, -56 + floatY, 17, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        if (pup.isTrashPup) {
+          // Mini trash can icon
+          ctx.fillStyle = '#78909C';
+          ctx.fillRect(-34, -62 + floatY, 12, 13);
+          ctx.fillStyle = '#43A047';
+          ctx.fillRect(-36, -65 + floatY, 16, 3);
+        } else {
+          // Mini colored scoop + cone
+          ctx.fillStyle = '#E6A15C';
+          ctx.beginPath();
+          ctx.moveTo(-33, -55 + floatY);
+          ctx.lineTo(-23, -55 + floatY);
+          ctx.lineTo(-28, -44 + floatY);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.fillStyle = pup.scoop;
+          ctx.beginPath();
+          ctx.arc(-28, -58 + floatY, 6.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (pup.state === 'holding') {
+        // "TAP TO EAT!" pulsing badge
+        const pulse = 1 + Math.sin(time * 7) * 0.08;
+        ctx.save();
+        ctx.translate(0, -68 + floatY);
+        ctx.scale(pulse, pulse);
+        roundRectPath(ctx, -34, -12, 68, 22, 11);
+        ctx.fillStyle = pup.isTrashPup ? '#DCEDC8' : '#FFF9C4';
+        ctx.fill();
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 2.4;
+        ctx.stroke();
+
+        ctx.fillStyle = '#263238';
+        ctx.font = '800 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('TAP! 😋', 0, 0);
+        ctx.restore();
+      } else if (pup.state === 'happy') {
+        // Floating Heart / Star
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pup.isTrashPup ? '♻️✨' : '❤️✨', 0, -64 + floatY);
+      }
+
+      ctx.restore();
+    }
+
+    // Animation Loop
+    let lastTime = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+      const time = now / 1000;
+
+      const w = Math.max(320, window.innerWidth);
+      const h = Math.max(420, window.innerHeight);
+
+      // Update trash lid spring
+      if (trashLidAngle > 0) {
+        trashLidAngle = Math.max(0, trashLidAngle - dt * 1.4);
+      }
+
+      // Responsive Grid Layout (2x3 in portrait, 3x2 in landscape)
+      const isPortrait = h >= w;
+      const cols = isPortrait ? 2 : 3;
+      const rows = isPortrait ? 3 : 2;
+      const topSafe = Math.max(185, h * 0.36);
+      const bottomSafe = h - 32;
+      const playH = Math.max(220, bottomSafe - topSafe);
+      const cellW = w / cols;
+      const cellH = playH / rows;
+      const pupScale = Math.max(0.76, Math.min(1.22, Math.min(cellW / 145, cellH / 145)));
+
+      pups.forEach((pup, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        pup.x = cellW * (col + 0.5) - (pup.isTrashPup ? 12 * pupScale : 0);
+        pup.y = topSafe + cellH * (row + 0.56);
+        pup.hitR = Math.max(54, Math.min(cellW, cellH) * 0.46);
+
+        if (pup.bounce > 0) {
+          pup.bounce = Math.max(0, pup.bounce - dt * 3.2);
+        }
+
+        if (pup.state === 'holding') {
+          pup.treatProgress = Math.min(1, pup.treatProgress + dt * 4.5);
+        } else if (pup.state === 'eating') {
+          pup.stateTimer += dt;
+          const nextBites = Math.min(3, Math.floor(pup.stateTimer / 0.22));
+          if (nextBites > pup.bites) {
+            pup.bites = nextBites;
+            spawnParticles(
+              pup.x + 12 * pupScale,
+              pup.y - 12 * pupScale,
+              pup.isTrashPup ? '#8BC34A' : pup.scoop,
+              5,
+              'circle'
+            );
+          }
+          if (pup.stateTimer >= 0.72) {
+            pup.state = 'happy';
+            pup.stateTimer = 0;
+            pup.bounce = 1;
+            addScore(1);
+            spawnParticles(
+              pup.x,
+              pup.y - 36 * pupScale,
+              pup.isTrashPup ? '#7CB342' : '#FFD54F',
+              14,
+              'star'
+            );
+          }
+        } else if (pup.state === 'happy') {
+          pup.stateTimer += dt;
+          if (pup.stateTimer >= 1.25) {
+            pup.state = 'hungry';
+            pup.stateTimer = 0;
+            pup.bites = 0;
+          }
+        }
+      });
+
+      // Render Scene
+      ctx.clearRect(0, 0, w, h);
+      drawBackground(w, h, time);
+
+      pups.forEach((pup) => drawPup(pup, pupScale, time));
+
+      // Update & Draw Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.08;
+        pt.life -= pt.decay;
+        if (pt.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.life);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size * pt.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
