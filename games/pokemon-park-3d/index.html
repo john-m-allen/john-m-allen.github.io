@@ -18,6 +18,14 @@
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#38bdf8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PokéPark 3D" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
     <link rel="stylesheet" href="./styles.css" />
     <script defer src="./vendor/three.global.js"></script>
     <script defer src="./js/species.js"></script>
@@ -53,6 +61,29 @@
           </div>
 
           <div class="hud-right-col">
+            <button
+              type="button"
+              id="btn-install-app"
+              class="btn-install hidden"
+              aria-label="Install Pokémon Park 3D app"
+            >
+              <svg
+                class="icon-md"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span id="btn-install-label">Install App</span>
+            </button>
+
             <button
               type="button"
               id="btn-sound"
@@ -92,6 +123,10 @@
         <div class="hud-bottom-row">
           <div class="controls-hint">
             Tap grass or WASD to walk · Tap a Pokémon to catch!
+          </div>
+          <div id="offline-banner" role="status" class="offline-banner hidden">
+            <span class="offline-dot" aria-hidden="true"></span>
+            <span>Offline Mode</span>
           </div>
         </div>
       </div>
@@ -266,6 +301,26 @@
           </div>
 
           <div id="box-grid" class="box-scroll"></div>
+        </div>
+      </div>
+
+      <!-- iOS Safari Add to Home Screen Guide Modal -->
+      <div
+        id="ios-install-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Install on iPhone or iPad"
+        class="modal-backdrop hidden"
+      >
+        <div class="modal-pop ios-guide-card">
+          <h3 class="ios-guide-title font-display">Install Pokémon Park 3D</h3>
+          <p class="ios-guide-body">
+            1. Tap the <strong>Share</strong> button in Safari&apos;s toolbar.<br />
+            2. Scroll down and tap <strong>Add to Home Screen</strong>.
+          </p>
+          <button type="button" id="btn-ios-install-close" class="btn-continue">
+            Got It!
+          </button>
         </div>
       </div>
     </main>
