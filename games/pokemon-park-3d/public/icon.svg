@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="skyBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="56%" stop-color="#bae6fd" />
+      <stop offset="56.5%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#16a34a" />
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.24" cy="0.22" r="0.34">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#fef08a" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="topRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff5a5f" />
+      <stop offset="100%" stop-color="#dc2626" />
+    </linearGradient>
+    <linearGradient id="botWhite" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <filter id="dropShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.24" />
+    </filter>
+  </defs>
+
+  <!-- Full-bleed sunlit park background -->
+  <rect width="512" height="512" rx="108" fill="url(#skyBg)" />
+  <rect width="512" height="512" rx="108" fill="url(#sunGlow)" />
+
+  <!-- Soft distant meadow hill -->
+  <ellipse cx="380" cy="306" rx="220" ry="52" fill="#86efac" opacity="0.7" />
+  <ellipse cx="140" cy="316" rx="210" ry="48" fill="#4ade80" opacity="0.85" />
+
+  <!-- Cute sunny clouds -->
+  <g fill="#ffffff" opacity="0.9">
+    <circle cx="118" cy="112" r="24" />
+    <circle cx="144" cy="104" r="28" />
+    <circle cx="170" cy="114" r="20" />
+    <circle cx="386" cy="96" r="18" />
+    <circle cx="408" cy="90" r="22" />
+    <circle cx="428" cy="98" r="16" />
+  </g>
+
+  <!-- Centered Poké Ball emblem -->
+  <g transform="translate(256 266)" filter="url(#dropShadow)">
+    <!-- Outer circle clip & base -->
+    <circle cx="0" cy="0" r="144" fill="url(#botWhite)" stroke="#0f172a" stroke-width="18" />
+    <!-- Top red half -->
+    <path d="M -144 0 A 144 144 0 0 1 144 0 Z" fill="url(#topRed)" />
+    <!-- Gloss highlight -->
+    <ellipse cx="-52" cy="-64" rx="34" ry="18" transform="rotate(-32 -52 -64)" fill="#ffffff" opacity="0.46" />
+    <!-- Equatorial dark band -->
+    <rect x="-144" y="-15" width="288" height="30" fill="#0f172a" />
+    <!-- Outer ring for outline crispness -->
+    <circle cx="0" cy="0" r="144" fill="none" stroke="#0f172a" stroke-width="18" />
+    <!-- Center button -->
+    <circle cx="0" cy="0" r="46" fill="#0f172a" />
+    <circle cx="0" cy="0" r="30" fill="#ffffff" />
+    <circle cx="0" cy="0" r="17" fill="#e2e8f0" stroke="#94a3b8" stroke-width="4" />
+  </g>
+
+  <!-- Cheerful 4-star sparkle accents -->
+  <path d="M 404 146 L 411 164 L 429 171 L 411 178 L 404 196 L 397 178 L 379 171 L 397 164 Z" fill="#fde047" />
+  <path d="M 106 168 L 111 180 L 123 185 L 111 190 L 106 202 L 101 190 L 89 185 L 101 180 Z" fill="#fef08a" />
+</svg>
