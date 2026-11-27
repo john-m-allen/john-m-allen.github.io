@@ -11,6 +11,7 @@
     formatStars,
     getStarLabel,
     resolveActiveBallSelection,
+    resolvePwaInstallUiState,
     tickBallRespawnsPure,
   } = root.ParkRules;
   const SFX = root.ParkSFX;
@@ -207,9 +208,14 @@
       wildCount: document.getElementById('wild-count'),
       nextSpawn: document.getElementById('next-spawn'),
       buddySlot: document.getElementById('buddy-hud-slot'),
+      btnInstallApp: document.getElementById('btn-install-app'),
+      btnInstallLabel: document.getElementById('btn-install-label'),
       btnSound: document.getElementById('btn-sound'),
       btnOpenBox: document.getElementById('btn-open-box'),
       boxBtnSub: document.getElementById('box-btn-sub'),
+      offlineBanner: document.getElementById('offline-banner'),
+      iosInstallModal: document.getElementById('ios-install-modal'),
+      btnIosInstallClose: document.getElementById('btn-ios-install-close'),
 
       catchOverlay: document.getElementById('catch-overlay'),
       btnBackPark: document.getElementById('btn-back-park'),
@@ -657,11 +663,112 @@
       }
     });
 
+    // PWA install & offline experience
+    let deferredInstallPrompt = null;
+    const standaloneMedia = window.matchMedia
+      ? window.matchMedia('(display-mode: standalone)')
+      : null;
+
+    function isAppStandalone() {
+      return (
+        Boolean(standaloneMedia && standaloneMedia.matches) ||
+        window.navigator.standalone === true
+      );
+    }
+
+    function isIOSDevice() {
+      const ua = (window.navigator && window.navigator.userAgent || '').toLowerCase();
+      return /iphone|ipad|ipod/.test(ua);
+    }
+
+    function syncPwaInstallUi() {
+      if (!el.btnInstallApp) return;
+      const uiState = resolvePwaInstallUiState({
+        isStandalone: isAppStandalone(),
+        hasDeferredPrompt: Boolean(deferredInstallPrompt),
+        isIOS: isIOSDevice(),
+      });
+      el.btnInstallApp.classList.toggle('hidden', !uiState.visible);
+      if (uiState.visible && el.btnInstallLabel) {
+        el.btnInstallLabel.textContent = uiState.label;
+      }
+    }
+
+    function syncOfflineUi() {
+      if (!el.offlineBanner) return;
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      el.offlineBanner.classList.toggle('hidden', !offline);
+    }
+
+    function handleBeforeInstallPrompt(e) {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      syncPwaInstallUi();
+    }
+
+    function handleAppInstalled() {
+      deferredInstallPrompt = null;
+      syncPwaInstallUi();
+      showToast('Pokémon Park 3D installed!', 2400);
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('online', syncOfflineUi);
+    window.addEventListener('offline', syncOfflineUi);
+    if (standaloneMedia && typeof standaloneMedia.addEventListener === 'function') {
+      standaloneMedia.addEventListener('change', syncPwaInstallUi);
+    }
+
+    if (el.btnInstallApp) {
+      el.btnInstallApp.addEventListener('click', async () => {
+        if (deferredInstallPrompt) {
+          await deferredInstallPrompt.prompt();
+          try {
+            const choice = await deferredInstallPrompt.userChoice;
+            if (choice && choice.outcome === 'accepted') {
+              deferredInstallPrompt = null;
+            }
+          } catch {
+            deferredInstallPrompt = null;
+          }
+          syncPwaInstallUi();
+          return;
+        }
+        if (isIOSDevice() && el.iosInstallModal) {
+          el.iosInstallModal.classList.remove('hidden');
+        }
+      });
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const primarySw = isDev ? '/dev-sw.js?dev-sw' : './sw.js';
+        navigator.serviceWorker.register(primarySw, { scope: './' }).catch(() => {
+          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+        });
+      });
+    }
+
+    if (el.btnIosInstallClose && el.iosInstallModal) {
+      el.btnIosInstallClose.addEventListener('click', () => {
+        el.iosInstallModal.classList.add('hidden');
+      });
+    }
+
+    syncPwaInstallUi();
+    syncOfflineUi();
+
     // Initial render
     renderOverworldHud();
     syncBodyState();
 
     window.addEventListener('beforeunload', () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', syncOfflineUi);
+      window.removeEventListener('offline', syncOfflineUi);
       if (revealStage) revealStage.destroy();
       if (boxStage) boxStage.destroy();
       engine.destroy();
