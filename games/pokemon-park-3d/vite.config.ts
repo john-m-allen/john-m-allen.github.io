@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(() => {
   return {
-    base: './',
+    base: '/',
     plugins: [
       // Copy standalone HTML5 runtime assets (styles.css, vendor/, js/) into dist/
       // during writeBundle so Workbox precaches them cleanly without Node or TypeScript.
