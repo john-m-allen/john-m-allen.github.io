@@ -1,0 +1,6 @@
+{
+  "name": "Pokémon Park 3D",
+  "description": "Explore a sunlit 3D park, catch expressive Pokémon with swipe-to-throw Poké Balls, and walk with your favorite companion from your Poké Box.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
