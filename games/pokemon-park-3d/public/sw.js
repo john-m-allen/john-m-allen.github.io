@@ -1,6 +1,6 @@
 // Pokémon Park 3D - Service Worker
-const CACHE_NAME = 'pokepark-v1';
-const PRECACHE_URLS = [
+const CACHE_NAME = 'pokepark-v2';
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
@@ -26,8 +26,8 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS).catch((err) => {
-        console.warn('PWA precache partial failure:', err);
+      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
+        console.warn('PWA precache partial error:', err);
       });
     })
   );
@@ -37,44 +37,81 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
       );
     }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  const url = new URL(event.request.url);
+  const request = event.request;
+  if (request.method !== 'GET') return;
 
-  // Ignore non-http/https requests
+  const url = new URL(request.url);
   if (!url.protocol.startsWith('http')) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch fresh copy in background to keep cache up to date
-        fetch(event.request).then((networkResponse) => {
+  // Handle HTML document navigations (guarantee offline 200 fallback for Chrome PWA install check)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            const toCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, toCache));
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           }
-        }).catch(() => {});
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME);
+          const cached = await cache.match(request);
+          if (cached) return cached;
+          const fallbackIndex = await cache.match('/index.html');
+          if (fallbackIndex) return fallbackIndex;
+          const fallbackRoot = await cache.match('/');
+          if (fallbackRoot) return fallbackRoot;
+          return new Response('<!doctype html><html><body>Offline</body></html>', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' }
+          });
+        })
+    );
+    return;
+  }
+
+  // Handle static assets (cache-first, then network, with clean fallback)
+  event.respondWith(
+    caches.match(request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Refresh cache in background
+        fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+          })
+          .catch(() => {});
         return cachedResponse;
       }
 
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200) {
+      return fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
           return networkResponse;
-        }
-        const toCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, toCache));
-        return networkResponse;
-      }).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/') || caches.match('/index.html');
-        }
-      });
+        })
+        .catch(async () => {
+          const cache = await caches.open(CACHE_NAME);
+          const fallback = await cache.match(url.pathname);
+          if (fallback) return fallback;
+          return new Response(null, { status: 404 });
+        });
     })
   );
 });
