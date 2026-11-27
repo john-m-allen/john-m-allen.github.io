@@ -743,10 +743,8 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const primarySw = isDev ? '/dev-sw.js?dev-sw' : './sw.js';
-        navigator.serviceWorker.register(primarySw, { scope: './' }).catch(() => {
-          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
+          console.warn('Service worker registration failed:', err);
         });
       });
     }
