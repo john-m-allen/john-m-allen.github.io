@@ -1,49 +1,45 @@
 // Pokémon Park 3D - Service Worker
-const CACHE_NAME = 'pokepark-v2';
+const CACHE_NAME = 'pokepark-v3';
+const APP_SCOPE = self.registration.scope;
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/manifest.webmanifest',
-  '/manifest.json',
-  '/icon.svg',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/pwa-maskable-512x512.png',
-  '/apple-touch-icon.png',
-  '/vendor/three.global.js',
-  '/js/species.js',
-  '/js/rules.js',
-  '/js/audio.js',
-  '/js/textures.js',
-  '/js/pokemonBuilder.js',
-  '/js/stage3d.js',
-  '/js/parkScene.js',
-  '/js/app.js'
-];
+  'index.html',
+  'styles.css',
+  'manifest.webmanifest',
+  'manifest.json',
+  'icon.svg',
+  'pwa-192x192.png',
+  'pwa-512x512.png',
+  'pwa-maskable-512x512.png',
+  'apple-touch-icon.png',
+  'vendor/three.global.js',
+  'js/species.js',
+  'js/rules.js',
+  'js/audio.js',
+  'js/textures.js',
+  'js/pokemonBuilder.js',
+  'js/stage3d.js',
+  'js/parkScene.js',
+  'js/app.js'
+].map((asset) => new URL(asset, APP_SCOPE).href);
+
+const appUrl = (path) => new URL(path, APP_SCOPE).href;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('PWA precache partial error:', err);
-      });
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys
+          .filter((key) => key.startsWith('pokepark-') && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
@@ -52,9 +48,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (!url.protocol.startsWith('http')) return;
+  if (url.origin !== self.location.origin || !url.href.startsWith(APP_SCOPE)) return;
 
-  // Handle HTML document navigations (guarantee offline 200 fallback for Chrome PWA install check)
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -68,25 +63,15 @@ self.addEventListener('fetch', (event) => {
         .catch(async () => {
           const cache = await caches.open(CACHE_NAME);
           const cached = await cache.match(request);
-          if (cached) return cached;
-          const fallbackIndex = await cache.match('/index.html');
-          if (fallbackIndex) return fallbackIndex;
-          const fallbackRoot = await cache.match('/');
-          if (fallbackRoot) return fallbackRoot;
-          return new Response('<!doctype html><html><body>Offline</body></html>', {
-            status: 200,
-            headers: { 'Content-Type': 'text/html' }
-          });
+          return cached || cache.match(appUrl('index.html'));
         })
     );
     return;
   }
 
-  // Handle static assets (cache-first, then network, with clean fallback)
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Refresh cache in background
         fetch(request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
@@ -108,9 +93,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(async () => {
           const cache = await caches.open(CACHE_NAME);
-          const fallback = await cache.match(url.pathname);
-          if (fallback) return fallback;
-          return new Response(null, { status: 404 });
+          return (await cache.match(url.href)) || new Response(null, { status: 404 });
         });
     })
   );
