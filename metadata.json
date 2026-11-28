@@ -1,0 +1,6 @@
+{
+  "name": "Games | John Allen",
+  "description": "Collection of browser games including Pup Ice Cream Party, Pokémon Sleep 3D Campsite, Princess Tea Party, and Pokémon Park 3D.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

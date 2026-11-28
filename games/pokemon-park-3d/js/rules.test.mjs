@@ -4,9 +4,19 @@ import './rules.js';
 
 const {
   BALL_CONFIG,
+  BERRY_CONFIG,
+  BALLOON_INTERVAL_SEC,
+  MAX_WILD_ON_MAP,
   createInitialBallState,
+  createInitialBerryState,
   tickBallRespawnsPure,
+  tickBerryRespawnsPure,
+  computeEffectiveCatchRate,
+  darkenHexColor,
   resolveActiveBallSelection,
+  resolvePwaInstallUiState,
+  resolveRocketBattleOutcome,
+  advancePersistedWorldState,
   rollStarRating,
   formatStars,
   getStarLabel,
@@ -66,6 +76,25 @@ test('resolveActiveBallSelection hides depleted balls and falls back to availabl
 
   state.counts.master = 0;
   assert.equal(resolveActiveBallSelection(state), null);
+});
+
+test('resolvePwaInstallUiState returns visibility and label for each platform state', () => {
+  assert.deepEqual(
+    resolvePwaInstallUiState({ isStandalone: true, hasDeferredPrompt: true, isIOS: true }),
+    { visible: false, label: '' }
+  );
+  assert.deepEqual(
+    resolvePwaInstallUiState({ isStandalone: false, hasDeferredPrompt: true, isIOS: false }),
+    { visible: true, label: 'Install App' }
+  );
+  assert.deepEqual(
+    resolvePwaInstallUiState({ isStandalone: false, hasDeferredPrompt: false, isIOS: true }),
+    { visible: true, label: 'Install App' }
+  );
+  assert.deepEqual(
+    resolvePwaInstallUiState({ isStandalone: false, hasDeferredPrompt: false, isIOS: false }),
+    { visible: false, label: '' }
+  );
 });
 
 test('computeSwipeThrowParamsPure follows swipe trajectory with generous toddler-friendly hitbox', () => {
@@ -204,4 +233,126 @@ test('isPointOpenInPark rejects obstacles and outer boundary', () => {
   assert.equal(isPointOpenInPark(-8, -7, obs), false);
   assert.equal(isPointOpenInPark(20, 0, obs), false);
   assert.equal(isPointOpenInPark(2, 2, obs), true);
+});
+
+test('berries configure 5/10/15/20% catch boosts, respawn over time, and cap at 10', () => {
+  assert.equal(BERRY_CONFIG.oran.bonus, 0.05);
+  assert.equal(BERRY_CONFIG.razz.bonus, 0.10);
+  assert.equal(BERRY_CONFIG.pinap.bonus, 0.15);
+  assert.equal(BERRY_CONFIG.golden.bonus, 0.20);
+
+  const bState = createInitialBerryState();
+  assert.equal(bState.counts.oran, 10);
+  bState.counts.oran = 7;
+  bState.timers.oran = 0;
+
+  const changed = tickBerryRespawnsPure(bState, BERRY_CONFIG.oran.respawnSec * 2 + 1);
+  assert.equal(changed, true);
+  assert.equal(bState.counts.oran, 9);
+  assert.equal(bState.timers.oran, 1);
+
+  tickBerryRespawnsPure(bState, BERRY_CONFIG.oran.respawnSec * 5);
+  assert.equal(bState.counts.oran, 10);
+  assert.equal(bState.timers.oran, 0);
+
+  assert.ok(Math.abs(computeEffectiveCatchRate(0.25, 0.20) - 0.45) < 1e-9);
+  assert.equal(computeEffectiveCatchRate(0.95, 0.20), 1);
+});
+
+test('tablet hitbox scaling allows phone-length swipes on tablets and master balls always hit', () => {
+  // Phone-effort 200px upward swipe on an iPad / tablet viewport (820x1180) with slight horizontal offset
+  const tabletSwipe = computeSwipeThrowParamsPure({
+    startX: 410,
+    startY: 920,
+    endX: 500,
+    endY: 720,
+    curveAccumX: 18,
+    samples: [
+      { x: 410, y: 920, t: 0 },
+      { x: 455, y: 820, t: 80 },
+      { x: 500, y: 720, t: 160 },
+    ],
+    viewportWidth: 820,
+    viewportHeight: 1180,
+    ballKey: 'poke',
+  });
+  assert.equal(tabletSwipe.willHit, true);
+
+  // Bad short & wildly off-target sideways swipe still hits when using a Master Ball
+  const badMasterSwipe = computeSwipeThrowParamsPure({
+    startX: 200,
+    startY: 700,
+    endX: 390,
+    endY: 665,
+    curveAccumX: 140,
+    samples: [
+      { x: 200, y: 700, t: 0 },
+      { x: 390, y: 665, t: 120 },
+    ],
+    viewportWidth: 820,
+    viewportHeight: 1180,
+    ballKey: 'master',
+  });
+  assert.equal(badMasterSwipe.willHit, true);
+});
+
+test('darkenHexColor darkens hex colors by 30% for Dark Pokemon', () => {
+  assert.equal(darkenHexColor('#ffffff', 0.3), '#b3b3b3');
+  assert.equal(darkenHexColor('#6496c8', 0.3), '#46698c');
+});
+
+test('resolveRocketBattleOutcome enforces type advantage and 70% win rate when neutral', () => {
+  const adv = resolveRocketBattleOutcome(['water'], ['fire'], () => 0.99);
+  assert.equal(adv.playerWon, true);
+  assert.equal(adv.reason, 'type-advantage');
+
+  const disadv = resolveRocketBattleOutcome(['grass'], ['fire'], () => 0.01);
+  assert.equal(disadv.playerWon, false);
+  assert.equal(disadv.reason, 'type-disadvantage');
+
+  let wins = 0;
+  for (let i = 0; i < 100; i++) {
+    const res = resolveRocketBattleOutcome(['normal'], ['normal'], () => (i + 0.5) / 100);
+    if (res.playerWon) wins++;
+  }
+  assert.equal(wins, 70);
+});
+
+test('advancePersistedWorldState preserves spawns across short reload and advances elapsed time', () => {
+  const fakeSpecies = [
+    { id: 'pikachu', name: 'Pikachu' },
+    { id: 'bulbasaur', name: 'Bulbasaur' },
+  ];
+  const saved = {
+    savedAt: 100000,
+    autoSpawnTimer: 10,
+    balloonTimer: 20,
+    wildSpawns: [
+      { id: 'p1', speciesId: 'pikachu', ageSec: 15, x: 2, z: 3, heading: 0.5 },
+      { id: 'p2', speciesId: 'bulbasaur', ageSec: 110, x: -2, z: 1, heading: 1.0 },
+    ],
+  };
+
+  // Force reload 2 seconds later: keeps both spawns without creating a full new set of 8
+  const shortReload = advancePersistedWorldState(saved, 102000, fakeSpecies, () => 0.4);
+  assert.equal(shortReload.wildSpawns.length, 2);
+  assert.equal(shortReload.wildSpawns[0].id, 'p1');
+  assert.equal(shortReload.wildSpawns[1].id, 'p2');
+  assert.equal(shortReload.balloonDue, false);
+
+  // Return 30s later: p2 (>=120s) despawns, autoSpawnTimer (10+30=40s) generates 1 new spawn
+  const mediumReturn = advancePersistedWorldState(saved, 130000, fakeSpecies, () => 0.4);
+  assert.equal(mediumReturn.wildSpawns.some((w) => w.id === 'p1'), true);
+  assert.equal(mediumReturn.wildSpawns.some((w) => w.id === 'p2'), false);
+  assert.equal(mediumReturn.wildSpawns.length, 2);
+  assert.ok(mediumReturn.wildSpawns.length <= MAX_WILD_ON_MAP);
+
+  // Return after balloon interval (100s+ later -> 20 + 100 = 120s): balloonDue is true
+  const balloonReturn = advancePersistedWorldState(
+    saved,
+    100000 + BALLOON_INTERVAL_SEC * 1000,
+    fakeSpecies,
+    () => 0.4
+  );
+  assert.equal(balloonReturn.balloonDue, true);
 });

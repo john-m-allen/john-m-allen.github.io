@@ -76,6 +76,10 @@ button {
   text-overflow: ellipsis;
 }
 
+body[data-state="catch"] .toast-banner {
+  top: 162px;
+}
+
 /* HUD Layers */
 .hud-layer {
   position: fixed;
@@ -410,10 +414,253 @@ button {
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
 }
 
-.catch-bottom-wrap {
+.hud-bottom-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.btn-rocket-alert {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 2px solid #ef4444;
+  border-radius: 9999px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.28);
+  cursor: pointer;
+}
+
+.btn-rocket-alert:hover {
+  background: #1e293b;
+}
+
+.rocket-r-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.82rem;
+}
+
+.dark-tag {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #7c3aed;
+}
+
+.berry-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #047857;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+/* Team Rocket 10s Battle Overlay */
+.battle-layer {
+  z-index: 22;
+}
+
+.battle-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 10px;
+  max-width: 780px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.battle-fighter-card {
+  flex: 1 1 0;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid #ffffff;
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+
+.battle-fighter-card.enemy {
+  border-color: #c4b5fd;
+  background: rgba(250, 245, 255, 0.96);
+}
+
+.battle-fighter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.battle-fighter-name {
+  font-size: 0.94rem;
+  font-weight: 900;
+  color: #1e293b;
+}
+
+.battle-type-list {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.04em;
+}
+
+.battle-hp-track {
+  margin-top: 7px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.battle-hp-fill {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.25s ease;
+}
+
+.battle-hp-fill.enemy {
+  background: #7c3aed;
+}
+
+.battle-vs-card {
+  flex: 0 0 auto;
+  min-width: 112px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 2px solid #ef4444;
+  border-radius: 16px;
+  padding: 8px 12px;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+}
+
+.battle-kicker {
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f87171;
+}
+
+.battle-timer {
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 2px 0;
+}
+
+.battle-matchup-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fde047;
+}
+
+.battle-bottom-wrap {
   display: flex;
   justify-content: center;
+  margin-bottom: 10px;
+}
+
+.battle-banner {
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.28);
+  text-align: center;
+  max-width: 92vw;
+}
+
+.catch-bottom-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   width: 100%;
+}
+
+.berry-dock {
+  pointer-events: auto;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 6px;
+  width: fit-content;
+  max-width: 460px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 5px 6px;
+  border-radius: 18px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+.berry-btn {
+  flex: 1 1 0;
+  min-width: 72px;
+  max-width: 108px;
+  border-radius: 13px;
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.berry-btn:hover {
+  background: #f8fafc;
+}
+
+.berry-btn.active {
+  background: #ecfdf5;
+  border-color: #10b981;
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.22);
+}
+
+.berry-btn.empty {
+  opacity: 0.68;
+  background: #f8fafc;
+}
+
+.berry-swatch-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.berry-bonus {
+  font-size: 10px;
+  font-weight: 900;
+  color: #047857;
+  line-height: 1.1;
 }
 
 .ball-dock {
@@ -458,6 +705,11 @@ button {
 }
 
 .ball-btn:hover {
+  background: #f8fafc;
+}
+
+.ball-btn.empty {
+  opacity: 0.68;
   background: #f8fafc;
 }
 
@@ -1070,8 +1322,29 @@ button {
     padding: 12px;
   }
 
-  .ball-dock {
-    gap: 6px;
-    padding: 6px;
+  .ball-dock,
+  .berry-dock {
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .ball-btn {
+    min-width: 68px;
+  }
+
+  .berry-btn {
+    min-width: 64px;
+  }
+
+  .battle-header {
+    flex-wrap: wrap;
+  }
+
+  .battle-vs-card {
+    order: -1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 }

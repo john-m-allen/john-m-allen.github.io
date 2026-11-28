@@ -7,12 +7,16 @@
     AUTO_SPAWN_SEC,
     BALL_CONFIG,
     BALL_REST_COORDS,
+    BALLOON_INTERVAL_SEC,
+    BATTLE_DURATION_SEC,
+    BERRY_CONFIG,
     MAX_WILD_ON_MAP,
     NATURES,
     PARK_RADIUS,
     PLAYER_RADIUS,
     WILD_DESPAWN_SEC,
     computeBuddyFollowStep,
+    computeEffectiveCatchRate,
     computeSwipeThrowParamsPure,
     isPointOpenInPark,
     lerpAngle,
@@ -21,12 +25,14 @@
     rollStarRating,
     shouldShowFourStarAura,
     tickBallRespawnsPure,
+    tickBerryRespawnsPure,
   } = root.ParkRules;
   const {
     addPart,
     attachEdgeOnlyFourStarAura,
     buildPokeball3D,
     buildPokemon3D,
+    buildRocketBalloon3D,
     getBasicMat,
     getSharedGeo,
     getStdMat,
@@ -68,13 +74,17 @@
   const POKEMON_HIT_VEC = new THREE.Vector3(0, 2.12, -1.65);
 
   class ParkEngine {
-    constructor(container, initialBalls, callbacks) {
+    constructor(container, initialBalls, initialBerries, initialWorldState, callbacks) {
       this.container = container;
       this.callbacks = callbacks;
       this.ballState = {
         selected: initialBalls.selected,
         counts: Object.assign({}, initialBalls.counts),
         timers: Object.assign({}, initialBalls.timers),
+      };
+      this.berryState = {
+        counts: Object.assign({}, initialBerries.counts),
+        timers: Object.assign({}, initialBerries.timers),
       };
       this.renderedBallType = null;
 
@@ -84,13 +94,17 @@
       this.ripples = [];
       this.clouds = [];
       this.buddyHearts = [];
+      this.rocketBalloon = null;
+      this.battleCtrl = null;
 
       this.gameMode = 'overworld';
       this.activeEncounter = null;
-      this.autoSpawnTimer = 0;
+      this.autoSpawnTimer = initialWorldState ? initialWorldState.autoSpawnTimer || 0 : 0;
+      this.balloonTimer = initialWorldState ? initialWorldState.balloonTimer || 0 : 0;
       this.walkAnimPhase = 0;
       this.stepSoundTimer = 0;
       this.hudSyncTimer = 0;
+      this.worldSaveTimer = 0;
       this.playerTargetPos = null;
       this.playerHeading = 0;
 
@@ -137,16 +151,35 @@
       this.initRenderer();
       this.setupOverworldScene();
       this.setupCatchScene();
+      this.setupBattleScene();
       this.bindEvents();
 
-      // Seed 8 initial Pokémon (Squirtle first near the trainer as visual benchmark)
-      this.spawnWildPokemon(false, POKEMON_SPECIES[0]);
-      for (let i = 1; i < 8; i++) {
-        this.spawnWildPokemon(false);
+      if (initialWorldState && initialWorldState.hasPersistedState) {
+        const list = initialWorldState.wildSpawns || [];
+        for (const saved of list) {
+          const sp = POKEMON_SPECIES.find((s) => s.id === saved.speciesId);
+          if (!sp) continue;
+          const nat = NATURES.find((n) => n.name === saved.natureName) || NATURES[0];
+          this.spawnWildPokemon(false, null, Object.assign({}, saved, { species: sp, nature: nat }));
+        }
+        if (initialWorldState.balloonDue) {
+          this.spawnRocketBalloon();
+        }
+      } else {
+        // Brand-new park: seed 8 initial Pokémon (Squirtle first near the trainer)
+        this.spawnWildPokemon(false, POKEMON_SPECIES[0]);
+        for (let i = 1; i < 8; i++) {
+          this.spawnWildPokemon(false);
+        }
       }
 
       this.renderer.render(this.scene, this.camera);
-      this.callbacks.onHudTick(this.wildSpawns.length, AUTO_SPAWN_SEC, this.cloneBallState());
+      this.callbacks.onHudTick(
+        this.wildSpawns.length,
+        Math.max(0, AUTO_SPAWN_SEC - this.autoSpawnTimer),
+        this.cloneBallState(),
+        this.cloneBerryState()
+      );
       this.scheduleNextFrame();
     }
 
@@ -155,6 +188,35 @@
         selected: this.ballState.selected,
         counts: Object.assign({}, this.ballState.counts),
         timers: Object.assign({}, this.ballState.timers),
+      };
+    }
+
+    cloneBerryState() {
+      return {
+        counts: Object.assign({}, this.berryState.counts),
+        timers: Object.assign({}, this.berryState.timers),
+      };
+    }
+
+    getWorldSnapshot() {
+      return {
+        savedAt: Date.now(),
+        autoSpawnTimer: this.autoSpawnTimer,
+        balloonTimer: this.balloonTimer,
+        wildSpawns: this.wildSpawns.map((w) => ({
+          id: w.id,
+          speciesId: w.species.id,
+          isShiny: Boolean(w.isShiny),
+          isDark: Boolean(w.isDark),
+          natureName: w.nature.name,
+          stars: w.stars,
+          maxAttempts: w.maxAttempts,
+          attemptsUsed: w.attemptsUsed,
+          ageSec: w.ageSec,
+          x: w.group.position.x,
+          z: w.group.position.z,
+          heading: w.heading,
+        })),
       };
     }
 
@@ -469,6 +531,68 @@
       this.catchScene.add(this.catchFlashSphere);
     }
 
+    setupBattleScene() {
+      const geo = getSharedGeo();
+      this.battleScene = new THREE.Scene();
+      this.battleScene.background = new THREE.Color('#7dd3fc');
+      this.setupStudioEnvironment(this.battleScene);
+
+      const w = Math.max(1, this.container.clientWidth || window.innerWidth);
+      const h = Math.max(1, this.container.clientHeight || window.innerHeight);
+      this.battleCamera = new THREE.PerspectiveCamera(44, w / h, 0.1, 70);
+      this.battleCamera.position.set(0, 3.0, 9.6);
+      this.battleCamera.lookAt(0, 1.35, 0);
+
+      this.battleScene.add(new THREE.HemisphereLight('#ffffff', '#34a853', 0.9));
+      const dir = new THREE.DirectionalLight('#fffbeb', 1.05);
+      dir.position.set(5, 11, 7);
+      this.battleScene.add(dir);
+
+      const grassTex = getMeadowGrassTexture();
+      const floorMat = getTexturedMat(grassTex, 'battle_meadow_mat_v1', 0.92, 0.18);
+      const floor = new THREE.Mesh(geo.disc, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(0, 0, -1);
+      floor.scale.setScalar(18);
+      this.battleScene.add(floor);
+
+      const arenaRing = new THREE.Mesh(
+        geo.ring,
+        new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide, transparent: true, opacity: 0.35 })
+      );
+      arenaRing.rotation.x = -Math.PI / 2;
+      arenaRing.position.set(0, 0.02, 0);
+      arenaRing.scale.setScalar(4.2);
+      this.battleScene.add(arenaRing);
+
+      const bgBalloon = buildRocketBalloon3D();
+      bgBalloon.position.set(0, 3.6, -9.5);
+      bgBalloon.scale.setScalar(0.75);
+      this.battleScene.add(bgBalloon);
+      this.battleBgBalloon = bgBalloon;
+
+      this.battlePlayerHolder = new THREE.Group();
+      this.battleScene.add(this.battlePlayerHolder);
+
+      this.battleEnemyHolder = new THREE.Group();
+      this.battleScene.add(this.battleEnemyHolder);
+
+      this.battleOrb = new THREE.Mesh(
+        geo.sphereLow,
+        new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.95 })
+      );
+      this.battleOrb.scale.setScalar(0.28);
+      this.battleOrb.visible = false;
+      this.battleScene.add(this.battleOrb);
+
+      this.battleBurst = new THREE.Mesh(
+        geo.sphereLow,
+        new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
+      );
+      this.battleBurst.scale.setScalar(0.8);
+      this.battleScene.add(this.battleBurst);
+    }
+
     setBuddyFollower(record) {
       if (this.buddy) {
         this.scene.remove(this.buddy.group);
@@ -486,7 +610,7 @@
       buddyRing.scale.setScalar(0.75 * (record.species.scale || 1));
       holder.add(buddyRing);
 
-      const model = buildPokemon3D(record.species, record.isShiny, record.nature);
+      const model = buildPokemon3D(record.species, record.isShiny, record.nature, record.isDark);
       holder.add(model);
 
       let auraUpdater = null;
@@ -564,6 +688,7 @@
 
     selectBall(type) {
       if (!this.ballState.counts || !(this.ballState.counts[type] > 0)) {
+        this.callbacks.onToast('Out of that Poké Ball! Recharging...', 1400);
         this.syncSelectedBallAndVisual();
       } else {
         this.ballState.selected = type;
@@ -572,12 +697,51 @@
       this.callbacks.onHudTick(
         this.wildSpawns.length,
         Math.max(0, AUTO_SPAWN_SEC - this.autoSpawnTimer),
-        this.cloneBallState()
+        this.cloneBallState(),
+        this.cloneBerryState()
       );
+    }
+
+    applyBerry(berryKey) {
+      if (this.gameMode !== 'catch' || !this.activeEncounter) return false;
+      if (this.throwCtrl.phase !== 'idle') return false;
+      const cfg = BERRY_CONFIG[berryKey];
+      if (!cfg) return false;
+      if (this.activeEncounter.activeBerryKey) {
+        this.callbacks.onToast('A berry is already active for this throw!', 1400);
+        return false;
+      }
+      if (!this.berryState.counts || !(this.berryState.counts[berryKey] > 0)) {
+        this.callbacks.onToast(`Out of ${cfg.label} Berries! Recharging...`, 1400);
+        return false;
+      }
+      this.berryState.counts[berryKey] -= 1;
+      this.activeEncounter.activeBerryKey = berryKey;
+      this.activeEncounter.activeBerryBonus = cfg.bonus;
+      SFX.buddyCheer();
+      this.callbacks.onToast(
+        `${cfg.label} Berry fed! Catch rate +${Math.round(cfg.bonus * 100)}%`,
+        1600
+      );
+      this.callbacks.onHudTick(
+        this.wildSpawns.length,
+        Math.max(0, AUTO_SPAWN_SEC - this.autoSpawnTimer),
+        this.cloneBallState(),
+        this.cloneBerryState()
+      );
+      this.callbacks.onEncounterUpdate?.({
+        activeBerryKey: this.activeEncounter.activeBerryKey,
+        activeBerryBonus: this.activeEncounter.activeBerryBonus,
+      });
+      return true;
     }
 
     getBallState() {
       return this.cloneBallState();
+    }
+
+    getBerryState() {
+      return this.cloneBerryState();
     }
 
     exitCatchToOverworld() {
@@ -659,9 +823,10 @@
       const entry = this.wildSpawns[idx];
       this.scene.remove(entry.group);
       this.wildSpawns.splice(idx, 1);
+      this.callbacks.onWorldDirty?.(this.getWorldSnapshot());
     }
 
-    spawnWildPokemon(nearPlayer, forcedSpecies) {
+    spawnWildPokemon(nearPlayer, forcedSpecies, persistedData) {
       while (this.wildSpawns.length >= MAX_WILD_ON_MAP) {
         const oldest = this.wildSpawns[0];
         if (!oldest) break;
@@ -670,16 +835,36 @@
 
       const geo = getSharedGeo();
       const species =
-        forcedSpecies || POKEMON_SPECIES[Math.floor(Math.random() * POKEMON_SPECIES.length)];
-      const isShiny = forcedSpecies ? false : Math.random() < 0.05;
-      const nature = forcedSpecies ? NATURES[0] : rollNature();
-      const stars = rollStarRating();
-      const maxAttempts = 2 + Math.floor(Math.random() * 4);
+        (persistedData && persistedData.species) ||
+        forcedSpecies ||
+        POKEMON_SPECIES[Math.floor(Math.random() * POKEMON_SPECIES.length)];
+      const isShiny = persistedData
+        ? Boolean(persistedData.isShiny)
+        : forcedSpecies
+          ? false
+          : Math.random() < 0.05;
+      const isDark = persistedData ? Boolean(persistedData.isDark) : false;
+      const nature =
+        (persistedData && persistedData.nature) || (forcedSpecies ? NATURES[0] : rollNature());
+      const stars =
+        persistedData && typeof persistedData.stars === 'number'
+          ? persistedData.stars
+          : rollStarRating();
+      const maxAttempts =
+        persistedData && typeof persistedData.maxAttempts === 'number'
+          ? persistedData.maxAttempts
+          : 2 + Math.floor(Math.random() * 4);
+      const attemptsUsed =
+        persistedData && typeof persistedData.attemptsUsed === 'number'
+          ? persistedData.attemptsUsed
+          : 0;
+      const ageSec =
+        persistedData && typeof persistedData.ageSec === 'number' ? persistedData.ageSec : 0;
 
       const holder = new THREE.Group();
       holder.add(makeBlobShadow(0.75 * (species.scale || 1)));
 
-      const model = buildPokemon3D(species, false, nature);
+      const model = buildPokemon3D(species, false, nature, isDark);
       holder.add(model);
 
       const tapHitbox = new THREE.Mesh(geo.sphereLow, new THREE.MeshBasicMaterial({ visible: false }));
@@ -687,25 +872,44 @@
       tapHitbox.scale.setScalar(1.25);
       holder.add(tapHitbox);
 
-      const spot = forcedSpecies ? { x: 2.1, z: 1.5 } : this.findClearSpawnSpot(nearPlayer);
+      let spot = null;
+      if (
+        persistedData &&
+        typeof persistedData.x === 'number' &&
+        typeof persistedData.z === 'number'
+      ) {
+        spot = { x: persistedData.x, z: persistedData.z };
+      } else if (forcedSpecies) {
+        spot = { x: 2.1, z: 1.5 };
+      } else {
+        spot = this.findClearSpawnSpot(nearPlayer);
+      }
       holder.position.set(spot.x, 0, spot.z);
-      const id = `${species.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const id =
+        (persistedData && persistedData.id) ||
+        `${species.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       holder.userData.wildId = id;
       this.scene.add(holder);
 
       const wp = this.pickOpenWaypoint(spot.x, spot.z);
-      const initHeading = forcedSpecies ? 0 : Math.atan2(wp.x - spot.x, wp.z - spot.z);
+      const initHeading =
+        persistedData && typeof persistedData.heading === 'number'
+          ? persistedData.heading
+          : forcedSpecies
+            ? 0
+            : Math.atan2(wp.x - spot.x, wp.z - spot.z);
       holder.rotation.y = initHeading;
 
       const entry = {
         id,
         species,
         isShiny,
+        isDark,
         nature,
         stars,
         maxAttempts,
-        attemptsUsed: 0,
-        ageSec: 0,
+        attemptsUsed,
+        ageSec,
         group: holder,
         model,
         radius: species.radius || 0.78,
@@ -719,7 +923,98 @@
         watchdogAnchor: new THREE.Vector3(spot.x, 0, spot.z),
       };
       this.wildSpawns.push(entry);
+      if (!persistedData) {
+        this.callbacks.onWorldDirty?.(this.getWorldSnapshot());
+      }
       return entry;
+    }
+
+    spawnRocketBalloon() {
+      if (this.rocketBalloon) return;
+      const group = buildRocketBalloon3D();
+      const playerZ = this.playerGroup ? this.playerGroup.position.z : 0;
+      const laneZ = Math.max(-9, Math.min(7, playerZ - 3.2));
+      group.position.set(-19, 5.8, laneZ);
+      this.scene.add(group);
+
+      const shadow = makeBlobShadow(2.4);
+      shadow.position.set(-19, 0.03, laneZ);
+      this.scene.add(shadow);
+
+      this.rocketBalloon = {
+        group,
+        shadow,
+        elapsed: 0,
+        duration: 24,
+        startX: -19,
+        endX: 19,
+        laneZ,
+      };
+      SFX.shiny();
+      this.callbacks.onBalloonChange?.(true);
+      this.callbacks.onToast('🎈 Team Rocket Balloon spotted! Tap it to battle!', 3200);
+    }
+
+    removeRocketBalloon() {
+      if (!this.rocketBalloon) return;
+      this.scene.remove(this.rocketBalloon.group);
+      this.scene.remove(this.rocketBalloon.shadow);
+      this.rocketBalloon = null;
+      this.callbacks.onBalloonChange?.(false);
+    }
+
+    enterRocketBattle(battleConfig) {
+      if (this.gameMode !== 'overworld') return;
+      this.removeRocketBalloon();
+      this.gameMode = 'battle';
+      this.playerTargetPos = null;
+      this.clearInputs();
+
+      while (this.battlePlayerHolder.children.length > 0) {
+        this.battlePlayerHolder.remove(this.battlePlayerHolder.children[0]);
+      }
+      while (this.battleEnemyHolder.children.length > 0) {
+        this.battleEnemyHolder.remove(this.battleEnemyHolder.children[0]);
+      }
+
+      const pModel = buildPokemon3D(
+        battleConfig.playerRecord.species,
+        battleConfig.playerRecord.isShiny,
+        battleConfig.playerRecord.nature,
+        battleConfig.playerRecord.isDark
+      );
+      pModel.rotation.y = Math.PI * 0.45;
+      this.battlePlayerHolder.add(pModel);
+      this.battlePlayerHolder.position.set(-2.1, 0, 0.2);
+      this.battlePlayerHolder.scale.setScalar(1);
+
+      const eModel = buildPokemon3D(
+        battleConfig.enemyCandidate.species,
+        battleConfig.enemyCandidate.isShiny,
+        battleConfig.enemyCandidate.nature,
+        true
+      );
+      eModel.rotation.y = -Math.PI * 0.45;
+      this.battleEnemyHolder.add(eModel);
+      this.battleEnemyHolder.position.set(2.1, 0, -0.2);
+      this.battleEnemyHolder.scale.setScalar(1);
+
+      this.battleOrb.visible = false;
+      this.battleBurst.material.opacity = 0;
+
+      this.battleCtrl = {
+        elapsed: 0,
+        duration: BATTLE_DURATION_SEC,
+        playerRecord: battleConfig.playerRecord,
+        enemyCandidate: battleConfig.enemyCandidate,
+        outcome: battleConfig.outcome,
+        lastStepIdx: -1,
+      };
+
+      SFX.tapPokemon();
+      this.renderer.render(this.battleScene, this.battleCamera);
+      this.callbacks.onBattleStart?.(battleConfig);
+      this.callbacks.onModeChange('battle', null);
     }
 
     spawnGroundRipple(x, z) {
@@ -879,7 +1174,12 @@
         this.catchTargetHolder.remove(this.catchTargetHolder.children[0]);
       }
 
-      const model = buildPokemon3D(wildEntry.species, wildEntry.isShiny, wildEntry.nature);
+      const model = buildPokemon3D(
+        wildEntry.species,
+        wildEntry.isShiny,
+        wildEntry.nature,
+        wildEntry.isDark
+      );
       model.scale.multiplyScalar(0.92);
       if (shouldShowFourStarAura(wildEntry.stars, 'catch')) {
         attachEdgeOnlyFourStarAura(model, wildEntry.species, wildEntry.isShiny, wildEntry.nature);
@@ -893,7 +1193,13 @@
       if (wildEntry.isShiny) {
         this.spawnEncounterShinyBurst();
         SFX.shiny();
-        this.callbacks.onToast(`✨ A Shiny ${wildEntry.species.name} appeared!`, 2400);
+        this.callbacks.onToast(
+          `✨ A Shiny ${wildEntry.isDark ? 'Dark ' : ''}${wildEntry.species.name} appeared!`,
+          2400
+        );
+      } else if (wildEntry.isDark) {
+        SFX.tapPokemon();
+        this.callbacks.onToast(`Catch Dark ${wildEntry.species.name}!`, 2000);
       } else {
         SFX.tapPokemon();
       }
@@ -908,16 +1214,21 @@
         id: wildEntry.id,
         species: wildEntry.species,
         isShiny: wildEntry.isShiny,
+        isDark: Boolean(wildEntry.isDark),
+        isBalloonReward: Boolean(wildEntry.isBalloonReward),
         nature: wildEntry.nature,
         stars: wildEntry.stars,
         attemptsUsed: wildEntry.attemptsUsed,
         maxAttempts: wildEntry.maxAttempts,
+        activeBerryKey: wildEntry.activeBerryKey || null,
+        activeBerryBonus: wildEntry.activeBerryBonus || 0,
       });
     }
 
     returnToOverworld() {
       this.gameMode = 'overworld';
       this.activeEncounter = null;
+      this.battleCtrl = null;
       this.throwCtrl.phase = 'idle';
       this.throwCtrl.dragging = false;
       this.throwCtrl.samples = [];
@@ -978,9 +1289,12 @@
       if (!this.activeEncounter) return;
       const fledName = this.activeEncounter.species.name;
       const fledId = this.activeEncounter.id;
+      const isReward = Boolean(this.activeEncounter.isBalloonReward);
       SFX.flee();
-      this.callbacks.onToast(`💨 Oh no! ${fledName} ran away!`, 2300);
-      this.removeWildPokemonById(fledId);
+      this.callbacks.onToast(`💨 Oh no! ${this.activeEncounter.isDark ? 'Dark ' : ''}${fledName} ran away!`, 2300);
+      if (!isReward) {
+        this.removeWildPokemonById(fledId);
+      }
       this.returnToOverworld();
     }
 
@@ -989,6 +1303,14 @@
       this.pointerNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
       this.pointerNDC.y = -((clientY - rect.top) / rect.height) * 2 + 1;
       this.raycaster.setFromCamera(this.pointerNDC, this.camera);
+
+      if (this.rocketBalloon) {
+        const balloonHits = this.raycaster.intersectObject(this.rocketBalloon.group, true);
+        if (balloonHits.length > 0) {
+          this.callbacks.onBalloonTap?.();
+          return;
+        }
+      }
 
       if (this.buddy) {
         const buddyHits = this.raycaster.intersectObject(this.buddy.group, true);
@@ -1080,9 +1402,11 @@
         samples: this.throwCtrl.samples,
         viewportWidth: rect.width,
         viewportHeight: rect.height,
+        ballKey: this.ballState.selected,
       });
 
-      if (previewParams.upwardFlick <= 18) {
+      const isMasterThrow = this.ballState.selected === 'master' && previewParams.willHit;
+      if (previewParams.upwardFlick <= 18 && !isMasterThrow) {
         this.hideTrajectoryGuide();
       } else {
         const endP = new THREE.Vector3(previewParams.landingX, previewParams.landingY, previewParams.landingZ);
@@ -1105,6 +1429,7 @@
       this.hideTrajectoryGuide();
 
       const rect = this.renderer.domElement.getBoundingClientRect();
+      const activeBallKey = this.ballState.selected;
       const params = computeSwipeThrowParamsPure({
         startX: this.throwCtrl.startX,
         startY: this.throwCtrl.startY,
@@ -1114,9 +1439,10 @@
         samples: this.throwCtrl.samples,
         viewportWidth: rect.width,
         viewportHeight: rect.height,
+        ballKey: activeBallKey,
       });
 
-      if (params.upwardFlick > 20) {
+      if (params.upwardFlick > 20 || (activeBallKey === 'master' && params.willHit)) {
         this.throwCtrl.phase = 'flying';
         this.throwCtrl.phaseTime = 0;
         this.throwCtrl.flightDuration = Math.max(0.42, Math.min(0.68, 0.62 - params.upwardFlick * 0.00055));
@@ -1150,10 +1476,14 @@
       this.camera.updateProjectionMatrix();
       this.catchCamera.aspect = w / h;
       this.catchCamera.updateProjectionMatrix();
+      this.battleCamera.aspect = w / h;
+      this.battleCamera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
       // Immediately render resized frame so buffer never flashes blank
       if (this.gameMode === 'overworld') {
         this.renderer.render(this.scene, this.camera);
+      } else if (this.gameMode === 'battle') {
+        this.renderer.render(this.battleScene, this.battleCamera);
       } else {
         this.renderer.render(this.catchScene, this.catchCamera);
       }
@@ -1328,6 +1658,28 @@
         this.spawnWildPokemon(false);
       }
 
+      if (!this.rocketBalloon) {
+        this.balloonTimer += dt;
+        if (this.balloonTimer >= BALLOON_INTERVAL_SEC) {
+          this.balloonTimer = 0;
+          this.spawnRocketBalloon();
+        }
+      } else {
+        const rb = this.rocketBalloon;
+        rb.elapsed += dt;
+        const p = rb.elapsed / rb.duration;
+        if (p >= 1) {
+          this.removeRocketBalloon();
+        } else {
+          const x = rb.startX + (rb.endX - rb.startX) * p;
+          const y = 5.6 + Math.sin(p * Math.PI) * 1.1 + Math.sin(nowSec * 2.2) * 0.25;
+          rb.group.position.set(x, y, rb.laneZ);
+          rb.group.rotation.y = Math.sin(nowSec * 0.9) * 0.18;
+          rb.group.rotation.z = Math.sin(nowSec * 1.4) * 0.06;
+          rb.shadow.position.set(x, 0.03, rb.laneZ);
+        }
+      }
+
       for (let i = this.wildSpawns.length - 1; i >= 0; i--) {
         const w = this.wildSpawns[i];
         w.ageSec += dt;
@@ -1362,6 +1714,123 @@
         w.hopPhase += dt * (5.2 + w.speed * 1.4);
         w.model.position.y = Math.abs(Math.sin(w.hopPhase)) * 0.16;
         w.model.rotation.z = Math.sin(w.hopPhase * 0.5) * 0.065;
+      }
+    }
+
+    updateBattleScene(dt) {
+      if (this.gameMode !== 'battle' || !this.battleCtrl) return;
+      const b = this.battleCtrl;
+      b.elapsed += dt;
+      const t = b.elapsed;
+      const p = Math.min(1, t / b.duration);
+
+      if (this.battleBgBalloon) {
+        this.battleBgBalloon.position.y = 3.6 + Math.sin(t * 1.8) * 0.22;
+        this.battleBgBalloon.rotation.y = Math.sin(t * 0.7) * 0.15;
+      }
+
+      // Dramatic 10-second battle choreography
+      const stepIdx = Math.floor(t / 2.0);
+      if (stepIdx !== b.lastStepIdx && stepIdx < 5) {
+        b.lastStepIdx = stepIdx;
+        if (stepIdx % 2 === 0) SFX.throwBall();
+        else SFX.bounce();
+      }
+
+      const cycle = t % 2.0;
+      const isPlayerAttacking = stepIdx % 2 === 0;
+      const playerName = b.playerRecord.species.name;
+      const enemyName = `Dark ${b.enemyCandidate.species.name}`;
+
+      let playerHp = 100;
+      let enemyHp = 100;
+      let banner = `${playerName} vs ${enemyName}!`;
+
+      if (p < 0.85) {
+        const dmgProgress = p / 0.85;
+        if (b.outcome.playerWon) {
+          playerHp = Math.round(100 - dmgProgress * 55);
+          enemyHp = Math.round(100 - dmgProgress * 82);
+        } else {
+          playerHp = Math.round(100 - dmgProgress * 82);
+          enemyHp = Math.round(100 - dmgProgress * 55);
+        }
+
+        if (cycle < 1.1) {
+          this.battleOrb.visible = true;
+          const orbP = cycle / 1.1;
+          this.battleOrb.material.color.set(isPlayerAttacking ? '#38bdf8' : '#a855f7');
+          const fromX = isPlayerAttacking ? -1.6 : 1.6;
+          const toX = isPlayerAttacking ? 1.8 : -1.8;
+          this.battleOrb.position.set(
+            fromX + (toX - fromX) * orbP,
+            1.15 + Math.sin(orbP * Math.PI) * 0.55,
+            0
+          );
+          this.battleBurst.material.opacity = 0;
+          banner = isPlayerAttacking
+            ? `${playerName} launches an attack!`
+            : `${enemyName} strikes back!`;
+        } else {
+          this.battleOrb.visible = false;
+          const hitP = (cycle - 1.1) / 0.9;
+          this.battleBurst.position.set(isPlayerAttacking ? 2.0 : -2.0, 1.15, 0);
+          this.battleBurst.material.opacity = Math.sin(hitP * Math.PI) * 0.7;
+          this.battleBurst.scale.setScalar(0.6 + hitP * 0.9);
+          banner = isPlayerAttacking ? `Direct hit on ${enemyName}!` : `${playerName} braces for impact!`;
+        }
+
+        this.battlePlayerHolder.position.y = Math.abs(Math.sin(t * 4.5)) * 0.16;
+        this.battleEnemyHolder.position.y = Math.abs(Math.sin(t * 4.5 + 1.2)) * 0.16;
+      } else {
+        this.battleOrb.visible = false;
+        const finP = (p - 0.85) / 0.15;
+        if (b.outcome.playerWon) {
+          playerHp = 45;
+          enemyHp = Math.max(0, Math.round(18 * (1 - finP)));
+          this.battlePlayerHolder.position.y = Math.abs(Math.sin(t * 9)) * 0.35;
+          this.battleEnemyHolder.scale.setScalar(Math.max(0.2, 1 - finP * 0.65));
+          this.battleEnemyHolder.rotation.z = finP * 0.6;
+          banner = `${playerName} defeated ${enemyName}!`;
+        } else {
+          playerHp = Math.max(0, Math.round(18 * (1 - finP)));
+          enemyHp = 45;
+          this.battleEnemyHolder.position.y = Math.abs(Math.sin(t * 9)) * 0.35;
+          this.battlePlayerHolder.scale.setScalar(Math.max(0.2, 1 - finP * 0.65));
+          this.battlePlayerHolder.rotation.z = -finP * 0.6;
+          banner = `${enemyName} overwhelmed ${playerName}!`;
+        }
+      }
+
+      this.callbacks.onBattleTick?.({
+        remainingSec: Math.max(0, Math.ceil(b.duration - t)),
+        playerHp,
+        enemyHp,
+        banner,
+      });
+
+      if (t >= b.duration) {
+        const won = b.outcome.playerWon;
+        const cand = b.enemyCandidate;
+        this.battleCtrl = null;
+        if (won) {
+          SFX.catchFanfare(cand.stars);
+          this.enterCatchMiniGame({
+            id: `dark_${cand.species.id}_${Date.now()}`,
+            species: cand.species,
+            isShiny: cand.isShiny,
+            isDark: true,
+            isBalloonReward: true,
+            nature: cand.nature,
+            stars: cand.stars,
+            attemptsUsed: 0,
+            maxAttempts: 5,
+          });
+        } else {
+          SFX.flee();
+          this.callbacks.onToast(`Team Rocket won and escaped with Dark ${cand.species.name}!`, 2600);
+          this.returnToOverworld();
+        }
       }
     }
 
@@ -1400,13 +1869,18 @@
           this.callbacks.onHudTick(
             this.wildSpawns.length,
             Math.max(0, AUTO_SPAWN_SEC - this.autoSpawnTimer),
-            this.cloneBallState()
+            this.cloneBallState(),
+            this.cloneBerryState()
           );
 
           if (this.throwCtrl.willHit) {
             this.throwCtrl.phase = 'absorb';
             this.throwCtrl.phaseTime = 0;
-            this.throwCtrl.willCatch = Math.random() < cfg.catchRate;
+            const effectiveRate = computeEffectiveCatchRate(
+              cfg.catchRate,
+              this.activeEncounter.activeBerryBonus || 0
+            );
+            this.throwCtrl.willCatch = Math.random() < effectiveRate;
             this.catchBallGroup.position.copy(POKEMON_HIT_VEC);
             this.catchBallGroup.rotation.set(0, 0, 0);
             SFX.absorb();
@@ -1464,11 +1938,14 @@
           this.catchBallGroup.rotation.z = 0;
           if (this.throwCtrl.willCatch) {
             const caught = this.activeEncounter;
-            this.removeWildPokemonById(caught.id);
+            if (!caught.isBalloonReward) {
+              this.removeWildPokemonById(caught.id);
+            }
             const record = {
               uid: `caught_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
               species: caught.species,
               isShiny: caught.isShiny,
+              isDark: Boolean(caught.isDark),
               nature: caught.nature,
               stars: caught.stars,
               caughtAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -1478,6 +1955,12 @@
             this.callbacks.onCatchSuccess(record);
           } else {
             SFX.breakFree();
+            this.activeEncounter.activeBerryKey = null;
+            this.activeEncounter.activeBerryBonus = 0;
+            this.callbacks.onEncounterUpdate?.({
+              activeBerryKey: null,
+              activeBerryBonus: 0,
+            });
             this.catchTargetHolder.visible = true;
             this.catchTargetHolder.scale.setScalar(1);
             this.catchTargetHolder.position.copy(POKEMON_STAGE_VEC);
@@ -1534,14 +2017,20 @@
       this.lastFrameMs = now;
       const nowSec = now * 0.001;
 
-      const respawned = tickBallRespawnsPure(this.ballState, rawDt > 1 ? dt : catchDt);
-      if (respawned && this.gameMode === 'catch' && this.throwCtrl.phase === 'idle') {
+      const respawnStep = rawDt > 1 ? dt : catchDt;
+      const ballRespawned = tickBallRespawnsPure(this.ballState, respawnStep);
+      const berryRespawned = tickBerryRespawnsPure(this.berryState, respawnStep);
+      const respawned = ballRespawned || berryRespawned;
+      if (ballRespawned && this.gameMode === 'catch' && this.throwCtrl.phase === 'idle') {
         this.syncSelectedBallAndVisual();
       }
 
       if (this.gameMode === 'overworld') {
         this.updateOverworld(dt, nowSec);
         this.renderer.render(this.scene, this.camera);
+      } else if (this.gameMode === 'battle') {
+        this.updateBattleScene(catchDt);
+        this.renderer.render(this.battleScene, this.battleCamera);
       } else {
         this.updateCatchMiniGame(catchDt);
         this.renderer.render(this.catchScene, this.catchCamera);
@@ -1553,8 +2042,15 @@
         this.callbacks.onHudTick(
           this.wildSpawns.length,
           Math.max(0, AUTO_SPAWN_SEC - this.autoSpawnTimer),
-          this.cloneBallState()
+          this.cloneBallState(),
+          this.cloneBerryState()
         );
+      }
+
+      this.worldSaveTimer += dt;
+      if (this.worldSaveTimer >= 2.0) {
+        this.worldSaveTimer = 0;
+        this.callbacks.onWorldDirty?.(this.getWorldSnapshot());
       }
 
       this.scheduleNextFrame();

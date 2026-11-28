@@ -24,6 +24,26 @@
 
   let geoCache = null;
   const matCache = new Map();
+  const darkMatCache = new Map();
+  const _tmpRgb = { r: 0, g: 0, b: 0 };
+
+  function getDarkMaterial(origMat) {
+    if (!origMat || !origMat.color) return origMat;
+    const key = origMat.uuid;
+    if (darkMatCache.has(key)) return darkMatCache.get(key);
+    const cloned = origMat.clone();
+    cloned.color.getRGB(_tmpRgb, THREE.SRGBColorSpace);
+    cloned.color.setRGB(_tmpRgb.r * 0.7, _tmpRgb.g * 0.7, _tmpRgb.b * 0.7, THREE.SRGBColorSpace);
+    if (
+      cloned.emissive &&
+      (cloned.emissive.r > 0 || cloned.emissive.g > 0 || cloned.emissive.b > 0)
+    ) {
+      cloned.emissive.getRGB(_tmpRgb, THREE.SRGBColorSpace);
+      cloned.emissive.setRGB(_tmpRgb.r * 0.7, _tmpRgb.g * 0.7, _tmpRgb.b * 0.7, THREE.SRGBColorSpace);
+    }
+    darkMatCache.set(key, cloned);
+    return cloned;
+  }
 
   function smoothstep(edge0, edge1, x) {
     const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
@@ -1199,7 +1219,7 @@
     }
   }
 
-  function buildPokemon3D(species, isShiny, nature) {
+  function buildPokemon3D(species, isShiny, nature, isDark) {
     const geo = getSharedGeo();
     const group = new THREE.Group();
     const nat = nature || NATURES[0];
@@ -2217,6 +2237,14 @@
       }
     }
 
+    if (isDark) {
+      group.traverse((child) => {
+        if (child.isMesh && child.material && !child.material.isShaderMaterial) {
+          child.material = getDarkMaterial(child.material);
+        }
+      });
+    }
+
     group.scale.setScalar(species.scale || 1.0);
     return group;
   }
@@ -2267,6 +2295,97 @@
       addPart(g, geo.masterM, crestMat, [0, 0.235, 0.395], [-0.54, 0, 0], [1.12, 1.12, 1.12]);
     }
 
+    return g;
+  }
+
+  function getRocketBalloonTexture() {
+    const key = 'rocketBalloonTex_v1';
+    if (matCache.has(key)) return matCache.get(key);
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Dark charcoal & cream vertical gores with bold Team Rocket crimson band & "R" emblem
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = i % 2 === 0 ? '#1e293b' : '#f8fafc';
+      ctx.fillRect((i * 512) / 12, 0, 512 / 12 + 1, 256);
+    }
+    // Crimson horizontal belt
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(0, 96, 512, 58);
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 92, 512, 6);
+    ctx.fillRect(0, 152, 512, 6);
+
+    // Bold Team Rocket "R" emblems on front & back
+    for (const cx of [128, 384]) {
+      ctx.beginPath();
+      ctx.arc(cx, 125, 38, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#f8fafc';
+      ctx.stroke();
+
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '900 50px "Trebuchet MS", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('R', cx, 128);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const mat = getTexturedMat(tex, key, 0.45, 0.35);
+    return mat;
+  }
+
+  function buildRocketBalloon3D() {
+    const geo = getSharedGeo();
+    const g = new THREE.Group();
+
+    const envelopeMat = getRocketBalloonTexture();
+    const crimsonMat = getStdMat('#dc2626', 0.38, 0.08);
+    const darkMat = getStdMat('#0f172a', 0.45, 0.12);
+    const basketMat = getStdMat('#78350f', 0.82, 0.02);
+    const goldTrimMat = getStdMat('#facc15', 0.3, 0.3);
+    const ropeMat = getStdMat('#cbd5e1', 0.65, 0.05);
+    const flameMat = getStdMat('#fb923c', 0.25, 0, '#f97316', 0.85);
+
+    // Envelope (teardrop-like balloon upper dome + lower collar)
+    addPart(g, geo.sphere, envelopeMat, [0, 3.25, 0], [0, -Math.PI * 0.5, 0], [1.75, 1.98, 1.75]);
+    addPart(g, geo.cyl, crimsonMat, [0, 1.55, 0], [0, 0, 0], [0.85, 0.48, 0.85]);
+    addPart(g, geo.torus, darkMat, [0, 1.4, 0], [Math.PI / 2, 0, 0], [0.58, 0.58, 0.32]);
+
+    // Top crown fin
+    addPart(g, geo.cone, crimsonMat, [0, 5.25, 0], [0, 0, 0], [0.35, 0.42, 0.35]);
+
+    // Burner glow between envelope & basket
+    addPart(g, geo.sphereLow, flameMat, [0, 1.02, 0], [0, 0, 0], [0.22, 0.3, 0.22]);
+
+    // 4 Suspension ropes
+    for (const [rx, rz] of [
+      [-0.45, -0.45],
+      [0.45, -0.45],
+      [-0.45, 0.45],
+      [0.45, 0.45],
+    ]) {
+      addPart(g, geo.cyl, ropeMat, [rx, 0.82, rz], [rz * 0.35, 0, -rx * 0.35], [0.04, 1.15, 0.04]);
+    }
+
+    // Wicker gondola basket + crimson Rocket rail
+    addPart(g, geo.box, basketMat, [0, 0.15, 0], [0, 0, 0], [1.05, 0.62, 0.92]);
+    addPart(g, geo.box, crimsonMat, [0, 0.46, 0], [0, 0, 0], [1.14, 0.14, 1.0]);
+    addPart(g, geo.box, goldTrimMat, [0, 0.15, 0.47], [0, 0, 0], [0.36, 0.36, 0.04]);
+
+    // Oversized invisible tap hitbox so clicking while moving across screen is effortless
+    const hitbox = new THREE.Mesh(geo.sphereLow, new THREE.MeshBasicMaterial({ visible: false }));
+    hitbox.position.set(0, 2.5, 0);
+    hitbox.scale.setScalar(2.9);
+    g.add(hitbox);
+
+    g.userData.isRocketBalloon = true;
     return g;
   }
 
@@ -2395,6 +2514,7 @@
     addPart,
     buildPokemon3D,
     buildPokeball3D,
+    buildRocketBalloon3D,
     attachEdgeOnlyFourStarAura,
   };
 })(window);

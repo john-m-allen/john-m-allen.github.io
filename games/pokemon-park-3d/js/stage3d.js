@@ -80,7 +80,7 @@
       this.userYaw = 0.22;
 
       if (!record) return;
-      const model = buildPokemon3D(record.species, record.isShiny, record.nature);
+      const model = buildPokemon3D(record.species, record.isShiny, record.nature, record.isDark);
       this.holder.add(model);
       if (root.ParkRules.shouldShowFourStarAura(record.stars, 'box')) {
         this.auraUpdater = attachEdgeOnlyFourStarAura(

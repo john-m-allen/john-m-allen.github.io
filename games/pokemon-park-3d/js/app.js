@@ -4,15 +4,25 @@
   const {
     BALL_CONFIG,
     BALL_ORDER,
+    BERRY_CONFIG,
+    BERRY_ORDER,
     MAX_WILD_ON_MAP,
     NATURES,
+    computeEffectiveCatchRate,
     createInitialBallState,
+    createInitialBerryState,
+    darkenHexColor,
     formatCountdown,
     formatStars,
     getStarLabel,
     resolveActiveBallSelection,
     resolvePwaInstallUiState,
+    resolveRocketBattleOutcome,
+    rollNature,
+    rollStarRating,
     tickBallRespawnsPure,
+    tickBerryRespawnsPure,
+    advancePersistedWorldState,
   } = root.ParkRules;
   const SFX = root.ParkSFX;
   const ParkEngine = root.ParkEngine;
@@ -21,6 +31,8 @@
   const BOX_STORAGE_KEY = 'pokemon_park_3d_box_v5';
   const LEGACY_BOX_STORAGE_KEY = 'pokemon_park_3d_box_v4';
   const BALL_STORAGE_KEY = 'pokemon_park_3d_balls_v5';
+  const BERRY_STORAGE_KEY = 'pokemon_park_3d_berries_v1';
+  const WORLD_STORAGE_KEY = 'pokemon_park_3d_world_v1';
   const BUDDY_STORAGE_KEY = 'pokemon_park_3d_buddy_v1';
 
   // Crisp inline SVG Icons
@@ -77,12 +89,32 @@
     </svg>`;
   }
 
+  function getBerrySwatchSVG(berryKey) {
+    const colorMap = {
+      oran: { fill: '#38bdf8', stroke: '#0284c7', leaf: '#22c55e' },
+      razz: { fill: '#fb7185', stroke: '#e11d48', leaf: '#22c55e' },
+      pinap: { fill: '#facc15', stroke: '#ca8a04', leaf: '#16a34a' },
+      golden: { fill: '#f59e0b', stroke: '#b45309', leaf: '#fef08a' },
+    };
+    const c = colorMap[berryKey] || colorMap.oran;
+    return `<svg viewBox="0 0 32 32" class="berry-swatch-svg" aria-hidden="true">
+      <path d="M16 7c-2-3.5-6-4-7-2.5 1.5 1.8 4 3 7 3.2 3-.2 5.5-1.4 7-3.2-1-1.5-5-1-7 2.5z" fill="${c.leaf}" stroke="#14532d" stroke-width="1.2"/>
+      <circle cx="16" cy="18.5" r="10.2" fill="${c.fill}" stroke="${c.stroke}" stroke-width="2"/>
+      <ellipse cx="12.5" cy="14.5" rx="2.6" ry="1.6" transform="rotate(-28 12.5 14.5)" fill="rgba(255,255,255,0.5)"/>
+    </svg>`;
+  }
+
   function escapeHTML(str) {
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function getRecordSwatchColor(rec) {
+    const base = rec.isShiny ? rec.species.shinyBody : rec.species.body;
+    return rec.isDark ? darkenHexColor(base, 0.3) : base;
   }
 
   function loadInitialCollection() {
@@ -103,6 +135,7 @@
           uid: item.uid || `caught_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           species,
           isShiny: Boolean(item.isShiny),
+          isDark: Boolean(item.isDark),
           nature,
           stars: typeof item.stars === 'number' ? Math.max(0, Math.min(4, item.stars)) : 1,
           caughtAt: item.caughtAt || 'Earlier',
@@ -120,6 +153,7 @@
         uid: c.uid,
         speciesId: c.species.id,
         isShiny: c.isShiny,
+        isDark: Boolean(c.isDark),
         natureName: c.nature.name,
         stars: c.stars,
         caughtAt: c.caughtAt,
@@ -174,6 +208,70 @@
     }
   }
 
+  function loadInitialBerryState() {
+    const base = createInitialBerryState();
+    try {
+      const raw = localStorage.getItem(BERRY_STORAGE_KEY);
+      if (!raw) return base;
+      const data = JSON.parse(raw);
+      for (const key of BERRY_ORDER) {
+        const cfg = BERRY_CONFIG[key];
+        if (data.counts && typeof data.counts[key] === 'number') {
+          base.counts[key] = Math.max(0, Math.min(cfg.maxCount, data.counts[key]));
+        }
+        if (data.timers && typeof data.timers[key] === 'number') {
+          base.timers[key] = Math.max(0, data.timers[key]);
+        }
+      }
+      if (typeof data.savedAt === 'number' && data.savedAt > 0) {
+        const elapsedSec = Math.max(0, (Date.now() - data.savedAt) / 1000);
+        tickBerryRespawnsPure(base, elapsedSec);
+      }
+    } catch {
+      // Ignore malformed cache
+    }
+    return base;
+  }
+
+  function saveBerryState(berryState) {
+    try {
+      localStorage.setItem(
+        BERRY_STORAGE_KEY,
+        JSON.stringify({
+          counts: berryState.counts,
+          timers: berryState.timers,
+          savedAt: Date.now(),
+        })
+      );
+    } catch {
+      // Ignore storage quota errors
+    }
+  }
+
+  function loadInitialWorldState() {
+    try {
+      const raw = localStorage.getItem(WORLD_STORAGE_KEY);
+      if (!raw) return { hasPersistedState: false };
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.savedAt !== 'number' || !Array.isArray(parsed.wildSpawns)) {
+        return { hasPersistedState: false };
+      }
+      const advanced = advancePersistedWorldState(parsed, Date.now(), POKEMON_SPECIES);
+      return Object.assign({ hasPersistedState: true }, advanced);
+    } catch {
+      return { hasPersistedState: false };
+    }
+  }
+
+  function saveWorldState(snapshot) {
+    if (!snapshot) return;
+    try {
+      localStorage.setItem(WORLD_STORAGE_KEY, JSON.stringify(snapshot));
+    } catch {
+      // Ignore storage quota errors
+    }
+  }
+
   function loadInitialBuddyUid(collection) {
     try {
       const uid = localStorage.getItem(BUDDY_STORAGE_KEY);
@@ -186,12 +284,16 @@
 
   function initApp() {
     const collection = loadInitialCollection();
+    const initialWorldState = loadInitialWorldState();
     const state = {
       collection,
       buddyUid: loadInitialBuddyUid(collection),
       ballState: loadInitialBallState(),
+      berryState: loadInitialBerryState(),
       gameMode: 'overworld',
       encounter: null,
+      balloonVisible: false,
+      battleConfig: null,
       wildCount: 8,
       nextSpawnSec: 30,
       soundEnabled: true,
@@ -213,15 +315,31 @@
       btnSound: document.getElementById('btn-sound'),
       btnOpenBox: document.getElementById('btn-open-box'),
       boxBtnSub: document.getElementById('box-btn-sub'),
+      btnBalloonAlert: document.getElementById('btn-balloon-alert'),
       offlineBanner: document.getElementById('offline-banner'),
       iosInstallModal: document.getElementById('ios-install-modal'),
       btnIosInstallClose: document.getElementById('btn-ios-install-close'),
 
+      battleOverlay: document.getElementById('battle-overlay'),
+      battlePlayerName: document.getElementById('battle-player-name'),
+      battlePlayerTypes: document.getElementById('battle-player-types'),
+      battlePlayerHp: document.getElementById('battle-player-hp'),
+      battleTimer: document.getElementById('battle-timer'),
+      battleMatchupBadge: document.getElementById('battle-matchup-badge'),
+      battleEnemyName: document.getElementById('battle-enemy-name'),
+      battleEnemyTypes: document.getElementById('battle-enemy-types'),
+      battleEnemyHp: document.getElementById('battle-enemy-hp'),
+      battleBanner: document.getElementById('battle-banner'),
+
       catchOverlay: document.getElementById('catch-overlay'),
       btnBackPark: document.getElementById('btn-back-park'),
       encounterName: document.getElementById('encounter-name'),
+      encounterDark: document.getElementById('encounter-dark'),
       encounterShiny: document.getElementById('encounter-shiny'),
+      encounterSub: document.getElementById('encounter-sub'),
+      encounterBerryActive: document.getElementById('encounter-berry-active'),
       catchRateValue: document.getElementById('catch-rate-value'),
+      berryDock: document.getElementById('berry-dock'),
       ballDock: document.getElementById('ball-dock'),
 
       revealModal: document.getElementById('reveal-modal'),
@@ -244,6 +362,7 @@
       boxStageFrame: document.getElementById('box-stage-frame'),
       boxStageCanvas: document.getElementById('box-stage-canvas'),
       showcaseName: document.getElementById('showcase-name'),
+      showcaseDark: document.getElementById('showcase-dark'),
       showcaseShiny: document.getElementById('showcase-shiny'),
       showcaseStars: document.getElementById('showcase-stars'),
       showcaseDetail: document.getElementById('showcase-detail'),
@@ -265,9 +384,11 @@
         ? 'box'
         : state.revealRecord
           ? 'reveal'
-          : state.gameMode === 'catch'
-            ? 'catch'
-            : 'overworld';
+          : state.gameMode === 'battle'
+            ? 'battle'
+            : state.gameMode === 'catch'
+              ? 'catch'
+              : 'overworld';
     }
 
     function showToast(message, durationMs) {
@@ -301,7 +422,7 @@
       if (!buddy) {
         el.buddySlot.innerHTML = '';
       } else {
-        const swatch = buddy.isShiny ? buddy.species.shinyBody : buddy.species.body;
+        const swatch = getRecordSwatchColor(buddy);
         el.buddySlot.innerHTML = `
           <div data-testid="buddy-hud-card" class="buddy-card">
             <span class="swatch-dot" style="background-color: ${escapeHTML(swatch)}"></span>
@@ -309,6 +430,7 @@
               <div class="buddy-label">${ICONS.heart}<span>Partner</span></div>
               <div class="buddy-name-row">
                 ${escapeHTML(buddy.species.name)}
+                ${buddy.isDark ? '<span class="dark-tag">· Dark</span>' : ''}
                 <span class="star-amber">${formatStars(buddy.stars)}</span>
               </div>
             </div>
@@ -330,6 +452,40 @@
           });
         }
       }
+
+      if (el.btnBalloonAlert) {
+        el.btnBalloonAlert.classList.toggle('hidden', !state.balloonVisible);
+      }
+    }
+
+    function renderBattleOverlay(tick) {
+      const visible = state.gameMode === 'battle' && Boolean(state.battleConfig);
+      if (el.battleOverlay) {
+        el.battleOverlay.classList.toggle('hidden', !visible);
+      }
+      if (!visible) return;
+      const cfg = state.battleConfig;
+      if (!tick) {
+        el.battlePlayerName.textContent = cfg.playerRecord.species.name;
+        el.battlePlayerTypes.textContent = (cfg.playerRecord.species.types || []).join(' / ');
+        el.battleEnemyName.textContent = `Dark ${cfg.enemyCandidate.species.name}`;
+        el.battleEnemyTypes.textContent = (cfg.enemyCandidate.species.types || []).join(' / ');
+        el.battleMatchupBadge.textContent =
+          cfg.outcome.reason === 'type-advantage'
+            ? 'Type Advantage!'
+            : cfg.outcome.reason === 'type-disadvantage'
+              ? 'Tough Matchup!'
+              : 'Even Fight · 70%';
+        el.battlePlayerHp.style.width = '100%';
+        el.battleEnemyHp.style.width = '100%';
+        el.battleTimer.textContent = '10s';
+        el.battleBanner.textContent = `Team Rocket sent out Dark ${cfg.enemyCandidate.species.name}!`;
+        return;
+      }
+      el.battleTimer.textContent = `${tick.remainingSec}s`;
+      el.battlePlayerHp.style.width = `${Math.max(0, Math.min(100, tick.playerHp))}%`;
+      el.battleEnemyHp.style.width = `${Math.max(0, Math.min(100, tick.enemyHp))}%`;
+      el.battleBanner.textContent = tick.banner;
     }
 
     function renderCatchOverlay() {
@@ -339,31 +495,61 @@
 
       const enc = state.encounter;
       el.encounterName.textContent = enc.species.name;
+      if (el.encounterDark) {
+        el.encounterDark.classList.toggle('hidden', !enc.isDark);
+      }
       el.encounterShiny.classList.toggle('hidden', !enc.isShiny);
+      if (el.encounterSub) {
+        el.encounterSub.textContent = enc.isDark ? 'Team Rocket Dark Encounter' : 'Wild Encounter';
+      }
+      if (el.encounterBerryActive) {
+        if (enc.activeBerryKey && BERRY_CONFIG[enc.activeBerryKey]) {
+          const bCfg = BERRY_CONFIG[enc.activeBerryKey];
+          el.encounterBerryActive.textContent = `${bCfg.label} Berry (+${Math.round(enc.activeBerryBonus * 100)}%)`;
+          el.encounterBerryActive.classList.remove('hidden');
+        } else {
+          el.encounterBerryActive.classList.add('hidden');
+        }
+      }
 
-      const availableKeys = BALL_ORDER.filter((key) => state.ballState.counts[key] > 0);
       const activeKey = resolveActiveBallSelection(state.ballState);
       if (activeKey) {
         const activeCfg = BALL_CONFIG[activeKey];
-        el.catchRateValue.textContent = `${Math.round(activeCfg.catchRate * 100)}%`;
+        const eff = computeEffectiveCatchRate(activeCfg.catchRate, enc.activeBerryBonus || 0);
+        el.catchRateValue.textContent = `${Math.round(eff * 100)}%`;
       } else {
-        el.catchRateValue.textContent = '--';
+        el.catchRateValue.textContent = '0%';
       }
 
-      if (availableKeys.length === 0) {
-        let minRemSec = Infinity;
-        for (const key of BALL_ORDER) {
-          const cfg = BALL_CONFIG[key];
-          const rem = Math.max(0, cfg.respawnSec - state.ballState.timers[key]);
-          if (rem < minRemSec) minRemSec = rem;
-        }
-        el.ballDock.innerHTML = `<div class="ball-dock-empty tabular-nums">Out of Poké Balls! Next ball in ${formatCountdown(minRemSec)}</div>`;
-        return;
+      if (el.berryDock) {
+        el.berryDock.innerHTML = BERRY_ORDER.map((key) => {
+          const cfg = BERRY_CONFIG[key];
+          const count = state.berryState.counts[key] || 0;
+          const isEmpty = count <= 0;
+          const isActive = enc.activeBerryKey === key;
+          const remSec = count < cfg.maxCount ? Math.max(0, cfg.respawnSec - state.berryState.timers[key]) : 0;
+          const timerText = count < cfg.maxCount ? `+${formatCountdown(remSec)}` : 'Full';
+
+          return `
+            <button
+              type="button"
+              data-berry-key="${key}"
+              class="berry-btn ${isActive ? 'active' : ''} ${isEmpty ? 'empty' : ''}"
+            >
+              ${getBerrySwatchSVG(key)}
+              <div class="ball-name">${escapeHTML(cfg.label)}</div>
+              <div class="berry-bonus">+${Math.round(cfg.bonus * 100)}%</div>
+              <div class="ball-count tabular-nums ${isEmpty ? 'no-stock' : 'has-stock'}">${count}/${cfg.maxCount}</div>
+              <div class="ball-timer tabular-nums">${timerText}</div>
+            </button>
+          `;
+        }).join('');
       }
 
-      el.ballDock.innerHTML = availableKeys.map((key) => {
+      el.ballDock.innerHTML = BALL_ORDER.map((key) => {
         const cfg = BALL_CONFIG[key];
-        const count = state.ballState.counts[key];
+        const count = state.ballState.counts[key] || 0;
+        const isEmpty = count <= 0;
         const isSelected = activeKey === key;
         const remSec = count < cfg.maxCount ? Math.max(0, cfg.respawnSec - state.ballState.timers[key]) : 0;
         const timerText = count < cfg.maxCount ? `+${formatCountdown(remSec)}` : 'Full';
@@ -372,11 +558,11 @@
           <button
             type="button"
             data-ball-key="${key}"
-            class="ball-btn ${isSelected ? 'selected' : ''}"
+            class="ball-btn ${isSelected ? 'selected' : ''} ${isEmpty ? 'empty' : ''}"
           >
             ${getBallSwatchSVG(key)}
             <div class="ball-name">${escapeHTML(cfg.label)}</div>
-            <div class="ball-count tabular-nums has-stock">${count}/${cfg.maxCount}</div>
+            <div class="ball-count tabular-nums ${isEmpty ? 'no-stock' : 'has-stock'}">${count}/${cfg.maxCount}</div>
             <div class="ball-timer tabular-nums">${timerText}</div>
           </button>
         `;
@@ -395,21 +581,26 @@
       }
 
       const is4Star = rec.stars === 4;
+      const tags = [rec.isDark ? 'Dark' : '', rec.isShiny ? 'Rare Shiny' : ''].filter(Boolean);
       el.revealModal.classList.remove('hidden');
-      el.revealModal.setAttribute('aria-label', `Caught ${rec.species.name}`);
+      el.revealModal.setAttribute('aria-label', `Caught ${rec.isDark ? 'Dark ' : ''}${rec.species.name}`);
       el.revealCard.classList.toggle('card-4star-rim', is4Star);
-      el.revealKicker.textContent = rec.isShiny ? 'Gotcha! · Rare Shiny' : 'Gotcha!';
-      el.revealTitle.textContent = rec.species.name;
+      el.revealKicker.textContent = tags.length > 0 ? `Gotcha! · ${tags.join(' · ')}` : 'Gotcha!';
+      el.revealTitle.textContent = rec.isDark ? `Dark ${rec.species.name}` : rec.species.name;
       el.revealStars.textContent = formatStars(rec.stars);
       el.revealStarLabel.textContent = getStarLabel(rec.stars);
       el.revealNatureName.textContent = rec.nature.name;
       el.revealNatureDesc.textContent = rec.nature.desc;
-      el.revealPalette.textContent = rec.isShiny ? 'Shiny Palette' : 'Standard';
+      el.revealPalette.textContent =
+        [rec.isDark ? 'Dark Shadow' : '', rec.isShiny ? 'Shiny' : ''].filter(Boolean).join(' · ') ||
+        'Standard';
       el.revealAppraisalNote.textContent = is4Star
         ? '4★ Golden Edge Aura'
-        : rec.isShiny
-          ? 'Rare Shiny Variant'
-          : 'Added to Poké Box';
+        : rec.isDark
+          ? 'Rescued Dark Pokémon'
+          : rec.isShiny
+            ? 'Rare Shiny Variant'
+            : 'Added to Poké Box';
 
       if (!revealStage) {
         revealStage = new Stage3D(el.revealCanvas);
@@ -435,6 +626,7 @@
       const filtered = state.collection.filter((rec) => {
         if (state.boxFilter === '4star') return rec.stars === 4;
         if (state.boxFilter === 'shiny') return rec.isShiny;
+        if (state.boxFilter === 'dark') return Boolean(rec.isDark);
         return true;
       });
 
@@ -447,6 +639,9 @@
 
       el.boxStageFrame.classList.toggle('card-4star-rim', Boolean(activeRecord && activeRecord.stars === 4));
       el.showcaseName.textContent = activeRecord ? activeRecord.species.name : 'No Pokémon Yet';
+      if (el.showcaseDark) {
+        el.showcaseDark.classList.toggle('hidden', !(activeRecord && activeRecord.isDark));
+      }
       el.showcaseShiny.classList.toggle('hidden', !(activeRecord && activeRecord.isShiny));
       el.showcaseStars.textContent = activeRecord ? formatStars(activeRecord.stars) : '☆☆☆☆';
       el.showcaseDetail.textContent = activeRecord
@@ -489,13 +684,14 @@
           const isSelected = activeRecord && activeRecord.uid === rec.uid;
           const isBuddy = state.buddyUid === rec.uid;
           const is4Star = rec.stars === 4;
-          const swatch = rec.isShiny ? rec.species.shinyBody : rec.species.body;
+          const swatch = getRecordSwatchColor(rec);
 
           return `
             <div class="poke-card ${isSelected ? 'selected' : ''} ${is4Star ? 'card-4star-rim' : ''}">
               <button type="button" class="poke-card-select" data-select-uid="${escapeHTML(rec.uid)}">
                 <div class="poke-card-top">
                   <span class="swatch-dot" style="background-color: ${escapeHTML(swatch)}"></span>
+                  ${rec.isDark ? '<span class="dark-tag">Dark</span>' : ''}
                   ${rec.isShiny ? '<span class="shiny-tag">Shiny</span>' : ''}
                 </div>
                 <div class="poke-card-name font-display">${escapeHTML(rec.species.name)}</div>
@@ -545,37 +741,109 @@
       }
     }
 
-    const engine = new ParkEngine(el.canvasMount, state.ballState, {
-      onModeChange: (mode, nextEncounter) => {
-        state.gameMode = mode;
-        state.encounter = nextEncounter;
-        renderOverworldHud();
-        renderCatchOverlay();
-        syncBodyState();
-      },
-      onHudTick: (count, nextSec, nextBalls) => {
-        state.wildCount = count;
-        state.nextSpawnSec = nextSec;
-        state.ballState = nextBalls;
-        saveBallState(nextBalls);
-        if (state.gameMode === 'overworld') {
+    function handleRocketBalloonActivate() {
+      const playerRecord = getActiveBuddy() || state.collection[0] || null;
+      if (!playerRecord) {
+        showToast('Catch a Pokémon first to battle Team Rocket!', 2200);
+        return;
+      }
+      const enemySpecies = POKEMON_SPECIES[Math.floor(Math.random() * POKEMON_SPECIES.length)];
+      const enemyCandidate = {
+        species: enemySpecies,
+        isShiny: Math.random() < 0.05,
+        isDark: true,
+        nature: rollNature(),
+        stars: rollStarRating(),
+      };
+      const outcome = resolveRocketBattleOutcome(
+        playerRecord.species.types,
+        enemyCandidate.species.types
+      );
+      engine.enterRocketBattle({
+        playerRecord,
+        enemyCandidate,
+        outcome,
+      });
+    }
+
+    let engine = null;
+    engine = new ParkEngine(
+      el.canvasMount,
+      state.ballState,
+      state.berryState,
+      initialWorldState,
+      {
+        onModeChange: (mode, nextEncounter) => {
+          state.gameMode = mode;
+          state.encounter = nextEncounter;
+          if (mode !== 'battle') {
+            state.battleConfig = null;
+          }
           renderOverworldHud();
-        } else if (state.gameMode === 'catch') {
+          renderBattleOverlay();
           renderCatchOverlay();
-        }
-      },
-      onToast: (message, durationMs) => {
-        showToast(message, durationMs);
-      },
-      onCatchSuccess: (record) => {
-        state.collection.unshift(record);
-        saveCollection(state.collection);
-        state.revealRecord = record;
-        renderOverworldHud();
-        renderRevealModal();
-        syncBodyState();
-      },
-    });
+          syncBodyState();
+        },
+        onHudTick: (count, nextSec, nextBalls, nextBerries) => {
+          state.wildCount = count;
+          state.nextSpawnSec = nextSec;
+          state.ballState = nextBalls;
+          if (nextBerries) {
+            state.berryState = nextBerries;
+            saveBerryState(nextBerries);
+          }
+          saveBallState(nextBalls);
+          if (state.gameMode === 'overworld') {
+            renderOverworldHud();
+          } else if (state.gameMode === 'catch') {
+            renderCatchOverlay();
+          }
+        },
+        onEncounterUpdate: (patch) => {
+          if (state.encounter && patch) {
+            Object.assign(state.encounter, patch);
+            renderCatchOverlay();
+          }
+        },
+        onWorldDirty: (snapshot) => {
+          if (snapshot) {
+            saveWorldState(snapshot);
+          } else if (engine) {
+            saveWorldState(engine.getWorldSnapshot());
+          }
+        },
+        onBalloonChange: (visible) => {
+          state.balloonVisible = Boolean(visible);
+          renderOverworldHud();
+        },
+        onBalloonTap: () => {
+          handleRocketBalloonActivate();
+        },
+        onBattleStart: (cfg) => {
+          state.battleConfig = cfg;
+          state.gameMode = 'battle';
+          renderBattleOverlay();
+          syncBodyState();
+        },
+        onBattleTick: (tick) => {
+          renderBattleOverlay(tick);
+        },
+        onToast: (message, durationMs) => {
+          showToast(message, durationMs);
+        },
+        onCatchSuccess: (record) => {
+          state.collection.unshift(record);
+          saveCollection(state.collection);
+          state.revealRecord = record;
+          renderOverworldHud();
+          renderRevealModal();
+          syncBodyState();
+        },
+      }
+    );
+
+    // Persist initial snapshot immediately so even rapid reloads preserve exact map spawns
+    saveWorldState(engine.getWorldSnapshot());
 
     // Restore saved buddy follower immediately on boot
     if (state.buddyUid) {
@@ -596,9 +864,26 @@
       syncBodyState();
     });
 
+    if (el.btnBalloonAlert) {
+      el.btnBalloonAlert.addEventListener('click', () => {
+        handleRocketBalloonActivate();
+      });
+    }
+
     el.btnBackPark.addEventListener('click', () => {
       engine.exitCatchToOverworld();
     });
+
+    if (el.berryDock) {
+      el.berryDock.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-berry-key]');
+        if (!btn) return;
+        const key = btn.getAttribute('data-berry-key');
+        if (key) {
+          engine.applyBerry(key);
+        }
+      });
+    }
 
     el.ballDock.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-ball-key]');
@@ -743,7 +1028,7 @@
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((err) => {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch((err) => {
           console.warn('Service worker registration failed:', err);
         });
       });
@@ -762,11 +1047,29 @@
     renderOverworldHud();
     syncBodyState();
 
+    function flushAllPersistence() {
+      saveBallState(engine.getBallState());
+      saveBerryState(engine.getBerryState());
+      saveWorldState(engine.getWorldSnapshot());
+    }
+
+    function handleVisibilitySave() {
+      if (document.visibilityState === 'hidden') {
+        flushAllPersistence();
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilitySave);
+    window.addEventListener('pagehide', flushAllPersistence);
+
     window.addEventListener('beforeunload', () => {
+      flushAllPersistence();
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', syncOfflineUi);
       window.removeEventListener('offline', syncOfflineUi);
+      window.removeEventListener('pagehide', flushAllPersistence);
+      document.removeEventListener('visibilitychange', handleVisibilitySave);
       if (revealStage) revealStage.destroy();
       if (boxStage) boxStage.destroy();
       engine.destroy();

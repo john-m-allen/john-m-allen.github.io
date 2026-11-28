@@ -16,6 +16,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.72,
     archetype: 'squirtle',
+    types: ['water'],
   },
   {
     id: 'pikachu',
@@ -32,6 +33,7 @@ window.POKEMON_SPECIES = [
     scale: 1.0,
     radius: 0.72,
     archetype: 'pikachu',
+    types: ['electric'],
   },
   {
     id: 'eevee',
@@ -49,6 +51,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.72,
     archetype: 'eevee',
+    types: ['normal'],
   },
   {
     id: 'espeon',
@@ -66,6 +69,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.72,
     archetype: 'espeon',
+    types: ['psychic'],
   },
   {
     id: 'mew',
@@ -83,6 +87,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.68,
     archetype: 'mew',
+    types: ['psychic'],
   },
   {
     id: 'gengar',
@@ -100,6 +105,7 @@ window.POKEMON_SPECIES = [
     scale: 1.06,
     radius: 0.85,
     archetype: 'gengar',
+    types: ['ghost', 'poison'],
   },
   {
     id: 'blastoise',
@@ -116,6 +122,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.88,
     archetype: 'blastoise',
+    types: ['water'],
   },
   {
     id: 'applin',
@@ -132,6 +139,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.72,
     archetype: 'applin',
+    types: ['grass', 'dragon'],
   },
   {
     id: 'zapdos',
@@ -148,6 +156,7 @@ window.POKEMON_SPECIES = [
     scale: 1.1,
     radius: 0.86,
     archetype: 'zapdos',
+    types: ['electric', 'flying'],
   },
   {
     id: 'fuecoco',
@@ -164,6 +173,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.74,
     archetype: 'fuecoco',
+    types: ['fire'],
   },
   {
     id: 'charizard',
@@ -181,6 +191,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.88,
     archetype: 'charizard',
+    types: ['fire', 'flying'],
   },
   {
     id: 'venusaur',
@@ -197,6 +208,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.92,
     archetype: 'venusaur',
+    types: ['grass', 'poison'],
   },
   {
     id: 'snorlax',
@@ -213,6 +225,7 @@ window.POKEMON_SPECIES = [
     scale: 1.15,
     radius: 0.98,
     archetype: 'snorlax',
+    types: ['normal'],
   },
   {
     id: 'lucario',
@@ -229,6 +242,7 @@ window.POKEMON_SPECIES = [
     scale: 1.04,
     radius: 0.76,
     archetype: 'lucario',
+    types: ['fighting', 'steel'],
   },
   {
     id: 'greninja',
@@ -245,6 +259,7 @@ window.POKEMON_SPECIES = [
     scale: 1.04,
     radius: 0.76,
     archetype: 'greninja',
+    types: ['water', 'dark'],
   },
   {
     id: 'dragonite',
@@ -261,6 +276,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.88,
     archetype: 'dragonite',
+    types: ['dragon', 'flying'],
   },
   {
     id: 'gyarados',
@@ -277,6 +293,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.86,
     archetype: 'serpent',
+    types: ['water', 'flying'],
   },
   {
     id: 'rayquaza',
@@ -293,6 +310,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.86,
     archetype: 'serpent',
+    types: ['dragon', 'flying'],
   },
   {
     id: 'gardevoir',
@@ -309,6 +327,7 @@ window.POKEMON_SPECIES = [
     scale: 1.04,
     radius: 0.76,
     archetype: 'gardevoir',
+    types: ['psychic', 'fairy'],
   },
   {
     id: 'mimikyu',
@@ -325,6 +344,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.72,
     archetype: 'mimikyu',
+    types: ['ghost', 'fairy'],
   },
   {
     id: 'arcanine',
@@ -341,6 +361,7 @@ window.POKEMON_SPECIES = [
     scale: 1.08,
     radius: 0.84,
     archetype: 'arcanine',
+    types: ['fire'],
   },
   {
     id: 'tyranitar',
@@ -357,6 +378,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.88,
     archetype: 'tyranitar',
+    types: ['rock', 'dark'],
   },
   {
     id: 'metagross',
@@ -373,6 +395,7 @@ window.POKEMON_SPECIES = [
     scale: 1.08,
     radius: 0.92,
     archetype: 'metagross',
+    types: ['steel', 'psychic'],
   },
   {
     id: 'salamence',
@@ -389,6 +412,7 @@ window.POKEMON_SPECIES = [
     scale: 1.1,
     radius: 0.86,
     archetype: 'salamence',
+    types: ['dragon', 'flying'],
   },
   {
     id: 'garchomp',
@@ -405,6 +429,7 @@ window.POKEMON_SPECIES = [
     scale: 1.1,
     radius: 0.84,
     archetype: 'garchomp',
+    types: ['dragon', 'ground'],
   },
   {
     id: 'togepi',
@@ -421,6 +446,7 @@ window.POKEMON_SPECIES = [
     scale: 0.94,
     radius: 0.68,
     archetype: 'togepi',
+    types: ['fairy'],
   },
   {
     id: 'jigglypuff',
@@ -438,6 +464,7 @@ window.POKEMON_SPECIES = [
     scale: 0.96,
     radius: 0.8,
     archetype: 'jigglypuff',
+    types: ['normal', 'fairy'],
   },
   {
     id: 'psyduck',
@@ -454,6 +481,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.74,
     archetype: 'psyduck',
+    types: ['water'],
   },
   {
     id: 'meowth',
@@ -470,6 +498,7 @@ window.POKEMON_SPECIES = [
     scale: 0.96,
     radius: 0.7,
     archetype: 'meowth',
+    types: ['normal'],
   },
   {
     id: 'machamp',
@@ -486,6 +515,7 @@ window.POKEMON_SPECIES = [
     scale: 1.08,
     radius: 0.84,
     archetype: 'machamp',
+    types: ['fighting'],
   },
   {
     id: 'alakazam',
@@ -502,6 +532,7 @@ window.POKEMON_SPECIES = [
     scale: 1.04,
     radius: 0.78,
     archetype: 'alakazam',
+    types: ['psychic'],
   },
   {
     id: 'lapras',
@@ -518,6 +549,7 @@ window.POKEMON_SPECIES = [
     scale: 1.1,
     radius: 0.88,
     archetype: 'lapras',
+    types: ['water', 'ice'],
   },
   {
     id: 'ditto',
@@ -534,6 +566,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.78,
     archetype: 'ditto',
+    types: ['normal'],
   },
   {
     id: 'aerodactyl',
@@ -550,6 +583,7 @@ window.POKEMON_SPECIES = [
     scale: 1.08,
     radius: 0.86,
     archetype: 'avian',
+    types: ['rock', 'flying'],
   },
   {
     id: 'articuno',
@@ -566,6 +600,7 @@ window.POKEMON_SPECIES = [
     scale: 1.1,
     radius: 0.86,
     archetype: 'avian',
+    types: ['ice', 'flying'],
   },
   {
     id: 'moltres',
@@ -582,6 +617,7 @@ window.POKEMON_SPECIES = [
     scale: 1.1,
     radius: 0.86,
     archetype: 'avian',
+    types: ['fire', 'flying'],
   },
   {
     id: 'mewtwo',
@@ -599,6 +635,7 @@ window.POKEMON_SPECIES = [
     scale: 1.08,
     radius: 0.78,
     archetype: 'mewtwo',
+    types: ['psychic'],
   },
   {
     id: 'cyndaquil',
@@ -615,6 +652,7 @@ window.POKEMON_SPECIES = [
     scale: 0.96,
     radius: 0.72,
     archetype: 'starter',
+    types: ['fire'],
   },
   {
     id: 'totodile',
@@ -631,6 +669,7 @@ window.POKEMON_SPECIES = [
     scale: 0.96,
     radius: 0.72,
     archetype: 'starter',
+    types: ['water'],
   },
   {
     id: 'lugia',
@@ -648,6 +687,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.88,
     archetype: 'avian',
+    types: ['psychic', 'flying'],
   },
   {
     id: 'ho-oh',
@@ -664,6 +704,7 @@ window.POKEMON_SPECIES = [
     scale: 1.12,
     radius: 0.88,
     archetype: 'avian',
+    types: ['fire', 'flying'],
   },
   {
     id: 'mudkip',
@@ -680,6 +721,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.7,
     archetype: 'starter',
+    types: ['water'],
   },
   {
     id: 'torchic',
@@ -696,6 +738,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.7,
     archetype: 'starter',
+    types: ['fire'],
   },
   {
     id: 'treecko',
@@ -712,6 +755,7 @@ window.POKEMON_SPECIES = [
     scale: 0.96,
     radius: 0.72,
     archetype: 'starter',
+    types: ['grass'],
   },
   {
     id: 'piplup',
@@ -728,6 +772,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.7,
     archetype: 'starter',
+    types: ['water'],
   },
   {
     id: 'rowlet',
@@ -744,6 +789,7 @@ window.POKEMON_SPECIES = [
     scale: 0.95,
     radius: 0.72,
     archetype: 'starter',
+    types: ['grass', 'flying'],
   },
   {
     id: 'tinkaton',
@@ -760,6 +806,7 @@ window.POKEMON_SPECIES = [
     scale: 0.98,
     radius: 0.78,
     archetype: 'tinkaton',
+    types: ['fairy', 'steel'],
   },
   {
     id: 'ceruledge',
@@ -776,6 +823,7 @@ window.POKEMON_SPECIES = [
     scale: 1.06,
     radius: 0.78,
     archetype: 'ceruledge',
+    types: ['fire', 'ghost'],
   },
   {
     id: 'scizor',
@@ -792,6 +840,7 @@ window.POKEMON_SPECIES = [
     scale: 1.05,
     radius: 0.82,
     archetype: 'scizor',
+    types: ['bug', 'steel'],
   },
   {
     id: 'absol',
@@ -808,5 +857,6 @@ window.POKEMON_SPECIES = [
     scale: 1.05,
     radius: 0.78,
     archetype: 'absol',
+    types: ['dark'],
   },
 ];
